@@ -1,17 +1,16 @@
-<!DOCTYPE html>
 <html>
 	<head>
-		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 		<title>My Outliner</title>
-		<!--<script src="//code.jquery.com/jquery-1.12.1.js"></script>-->
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+	  <!--<script src="//code.jquery.com/jquery-1.12.1.js"></script>-->
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
 
 		<!--<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.js"></script>
 
 		<!--<link href="../src/skin-win8/ui.fancytree.css" rel="stylesheet">-->
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-win8/ui.fancytree.css" />
-		<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-bootstrap-n/ui.fancytree.css" />-->
+		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-bootstrap-n/ui.fancytree.css" /> -->
+
 		<!--<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">-->
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
 		<!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>-->
@@ -21,140 +20,20 @@
 		<!--<script src="../src/jquery.fancytree.edit.js"></script>-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/jquery.fancytree-all.min.js"></script>
 
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"/>
 
-		<style type="text/css">
-		#draggableSample, #droppableSample {
-			height:100px;
-			padding:0.5em;
-			width:150px;
-			border:1px solid #AAAAAA;
-		}
-		#draggableSample {
-			background-color: silver;
-			color:#222222;
-		}
-		#droppableSample {
-			background-color: maroon;
-			color: white;
-		}
-		#droppableSample.drophover {
-			border: 1px solid green;
-		}
-		</style>
+		<link rel="stylesheet" href="index.css"/>
 		<script src="index.js"></script>
-		<!-- Add code to initialize the tree when the document is loaded: -->
-		<script type="text/javascript">
-		$(function(){
-			// Attach the fancytree widget to an existing <div id="tree"> element
-			// and pass the tree options as an argument to the fancytree() function:
-			$("#tree").fancytree({
-				// forces change of focus to cause change of activation, loosing distinction between focused and active. 
-				autoActivate: true,
-			 	//  1 - Single select. 2 - Multi select. 3 - Hierarchical multi select.
-				selectMode :1,
-				extensions: ["dnd", "edit", "wide"],
-				source: [
-					{title: "Node 1", key: "1",  icon: false},
-					{title: "Folder 2", key: "2",  icon: false, children: [
-						{title: "Node 2.1", key: "3",  icon: false},
-						{title: "Node 2.2", key: "4",  icon: false}
-					]}
-				],
-				// Adjusted to handle no icon 	
-				selectMode: 1,
-				wide: {
-					iconWidth: "0em",       // Adjust this if @fancy-icon-width != "16px"
-					iconSpacing: "0.5em",   // Adjust this if @fancy-icon-spacing != "3px"
-					labelSpacing: "0em",  // Adjust this if padding between icon and label != "3px"
-					levelOfs: "1.5em"       // Adjust this if ul padding != "16px"
-				},
-				edit: {
-						// Available options with their default:
-						adjustWidthOfs: 4,   // null: don't adjust input size to content
-						inputCss: { minWidth: "3em" },
-						triggerStart: ["f2", "dblclick", "shift+click", "mac+enter"],
-						beforeEdit: $.noop,  // Return false to prevent edit mode
-						// edit: $.noop,        // Editor was opened (available as data.input)
-						edit: function(event, data){
-								// Editor was opened (available as data.input)
-						},
-
-						beforeClose: $.noop, // Return false to prevent cancel/save (data.input is available)
-						save: $.noop,         // Save data.input.val() or return false to keep editor open
-						close: $.noop,       // Editor was removed
-				},
-				dnd: {
-					autoExpandMS: 400,
-					focusOnClick: true,
-					preventVoidMoves: true, // Prevent dropping nodes 'before self', etc.
-					preventRecursiveMoves: true, // Prevent dropping nodes on own descendants
-					dragStart: function(node, data) {
-						/** This function MUST be defined to enable dragging for the tree.
-						 *  Return false to cancel dragging of node.
-						 */
-						return true;
-					},
-					dragEnter: function(node, data) {
-						/** data.otherNode may be null for non-fancytree droppables.
-						 *  Return false to disallow dropping on node. In this case
-						 *  dragOver and dragLeave are not called.
-						 *  Return 'over', 'before, or 'after' to force a hitMode.
-						 *  Return ['before', 'after'] to restrict available hitModes.
-						 *  Any other return value will calc the hitMode from the cursor position.
-						 */
-						// Prevent dropping a parent below another parent (only sort
-						// nodes under the same parent)
-		/*           if(node.parent !== data.otherNode.parent){
-							return false;
-						}
-						// Don't allow dropping *over* a node (would create a child)
-						return ["before", "after"];
-		*/
-						 return true;
-					},
-					dragDrop: function(node, data) {
-						/** This function MUST be defined to enable dropping of items on
-						 *  the tree.
-						 */
-						data.otherNode.moveTo(node, data.hitMode);
-					}
-				},
-				activate: function(event, data) {
-		//        alert("activate " + data.node);
-				},
-				lazyLoad: function(event, data) {
-					// data.result = {url: "ajax-sub2.json"}
-				},
-			//  select: function(event, data) {
-			//     // Display list of selected nodes
-			//     var selNodes = data.tree.getSelectedNodes();
-			//     // convert to title/key array
-			//     var selKeys = $.map(selNodes, function(node){
-			//          return "[" + node.key + "]: '" + node.title + "'";
-			//       });
-			//     $("#echoSelection2").text(selKeys.join(", "));
-			//   },
-			//   click: function(event, data) {
-			//     // We should not toggle, if target was "checkbox", because this
-			//     // would result in double-toggle (i.e. no toggle)
-			//     if( $.ui.fancytree.getEventTargetType(event) === "title" ){
-			//       data.node.toggleSelected();
-			//     }
-			//   },
-			//   keydown: function(event, data) {
-			//     if( event.which === 32 ) {
-			//       data.node.toggleSelected();
-			//       return false;
-			//     }
-			//   },
-			 });
-		});
-		</script>
 	</head>
 	<body class="example">
 		<h1>My Outliner</h1>
 		<div class="controls">
+			<input type="button" value="+" id="addButton" onclick="addNode()">
+			<input type="button" value="-" id="delButton" onclick="delNode()">
+			<input type="button" value="<" id="promoteButton" onclick="promoteNode()">
+			<input type="button" value=">" id="demoteButton" onclick="demoteNode()">
+			<input type="button" value="^" id="moveUpButton" onclick="moveUpNode()">
+			<input type="button" value="v" id="moveDownButton" onclick="moveDownNode()">
 		</div>
 
 		<!-- Add a <div> element where the tree should appear: -->
