@@ -1,0 +1,45 @@
+<html>
+	<head>
+		<title>My Outliner</title>
+	  <!--<script src="//code.jquery.com/jquery-1.12.1.js"></script>-->
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+
+		<!--<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>-->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.js"></script>
+
+		<!--<link href="../src/skin-win8/ui.fancytree.css" rel="stylesheet">-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-win8/ui.fancytree.css" />
+		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-bootstrap-n/ui.fancytree.css" /> -->
+
+		<!--<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
+		<!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>-->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>  
+
+		<!--<script src="../src/jquery.fancytree.js"></script>-->
+		<!--<script src="../src/jquery.fancytree.edit.js"></script>-->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/jquery.fancytree-all.min.js"></script>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"/>
+
+		<link rel="stylesheet" href="index.css"/>
+		<script src="index.js"></script>
+	</head>
+	<body class="example">
+		<h1>My Outliner</h1>
+		<div class="controls">
+			<input type="button" value="+" id="addButton" onclick="addNode()">
+			<input type="button" value="-" id="delButton" onclick="delNode()">
+			<input type="button" value="<" id="promoteButton" onclick="promoteNode()">
+			<input type="button" value=">" id="demoteButton" onclick="demoteNode()">
+			<input type="button" value="^" id="moveUpButton" onclick="moveUpNode()">
+			<input type="button" value="v" id="moveDownButton" onclick="moveDownNode()">
+		</div>
+
+		<!-- Add a <div> element where the tree should appear: -->
+		<div id="tree">
+		</div>
+
+		<!-- (Irrelevant source removed.) -->
+	</body>
+</html>

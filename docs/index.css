@@ -1,0 +1,60 @@
+#draggableSample, #droppableSample {
+	height:100px;
+	padding:0.5em;
+	width:150px;
+	border:1px solid #AAAAAA;
+}
+#draggableSample {
+	background-color: silver;
+	color:#222222;
+}
+#droppableSample {
+	background-color: maroon;
+	color: white;
+}
+#droppableSample.drophover {
+	border: 1px solid green;
+}
+
+/*span*/
+.fancytree-node:hover {
+	/*background: #f2f6f9 !important;*/
+	background-color: #ffffff !important;
+	/*color: #5b9bd1 !important;*/
+	color: #ffffff !important;
+	cursor:pointer;
+	border: 1px solid green;
+}
+
+/*span*/
+span.fancytree-icon {
+  margin-left: 3px;
+  background-position: 0px 0px;
+}
+
+span.fancytree-icon:hover {
+  margin-left: 3px;
+  /*background-position: 0px 0px;*/
+  background-position: -48px 0px;
+}
+
+/*.fancytree-ico-cf span.fancytree-icon {
+  background-position: 0px -16px;
+}
+
+.fancytree-ico-c span.fancytree-icon:hover {
+  background-position: -16px 16px;
+}
+.fancytree-has-children.fancytree-ico-c span.fancytree-icon {
+  background-position: -32px 16px;
+}
+.fancytree-has-children.fancytree-ico-c span.fancytree-icon:hover {
+  background-position: -48px 16px;
+}
+.fancytree-ico-e span.fancytree-icon {
+  background-position: -64px 16px;
+}
+.fancytree-ico-e span.fancytree-icon:hover {
+  background-position: -80px 16px;
+}
+*/
