@@ -417,5 +417,5 @@ function clearOutline() {
 
 function copyJSON_toClipboard() {
 	copyToClipboard(getJSON_string());
-	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser.")
+	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. (The drag doesn't actually work yet.)")
 }
