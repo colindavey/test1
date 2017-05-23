@@ -97,13 +97,13 @@ $(document).ready(function() {
 			close: function(event, data) {
 				console.log("edit")
 				if( data.save ){
-					if( data.isNew ){
+					onOutlineChange();
+					if( data.isNew ) {
 						// Quick-enter: add new nodes until we hit [enter] on an empty title
 						// $("#tree").trigger("nodeCommand", {cmd: "addSibling"});
 						data.node.editCreateNode("after", makeNodeItem(""));
 					}
 					activateNode(data.node);
-					onOutlineChange();
 				}
 			}
 		},
@@ -315,9 +315,11 @@ function getJSON_string() {
 }
 
 function updateLocalStorage() {
-  	jsonStore = getJSON_string;
-  	console.log(jsonStore);
-	localStorage.setItem("most_recent", jsonStore);
+	if (localStorageSupported) {
+	  	jsonStore = getJSON_string();
+	  	console.log(jsonStore);
+		localStorage.setItem("most_recent", jsonStore);
+	}
 }
 
 function onOutlineChange() {
@@ -417,5 +419,5 @@ function clearOutline() {
 
 function copyJSON_toClipboard() {
 	copyToClipboard(getJSON_string());
-	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. (The drag doesn't actually work yet.)")
+	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
 }
