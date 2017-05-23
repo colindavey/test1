@@ -1,5 +1,6 @@
 var tree;
 var titleNode;
+var localStorageSupported = true;
 var glyph_opts = {
 	map: {
 	  doc: "glyphicon glyphicon-file",
@@ -31,13 +32,27 @@ $(document).ready(function() {
 	$("#demoteButton").prop('disabled', true);
 	$("#moveUpButton").prop('disabled', true);
 	$("#moveDownButton").prop('disabled', true);
+	if (typeof(Storage) === "undefined") {
+	    // Sorry! No Web Storage support..
+	    localStorageSupported = false;
+	}
+	var jsonStore = makeEmptyOutline();
+	var newTreeB = true;
+	if (localStorageSupported) {
+		if (localStorage["most_recent"] !== undefined) {
+			jsonStore = JSON.parse(localStorage["most_recent"]);
+			newTreeB = false;
+			// jsonStore = localStorage.getItem("most_recent");
+		}
+	}
 	// Attach the fancytree widget to an existing <div id="tree"> element
 	// and pass the tree options as an argument to the fancytree() function:
 	$("#tree").fancytree({
-		source: [
-			makeNodeTitle("Untitled"), 
-			// makeNodeItem("Item 1")
-		],
+		source: jsonStore,
+		// source: [
+		// 	makeNodeTitle("Untitled"), 
+		// 	// makeNodeItem("Item 1")
+		// ],
 		// source: [
 		// 	{title: "Title", icon: false},
 		// 	{title: "Item 1", icon: false, 
@@ -79,6 +94,18 @@ $(document).ready(function() {
 			beforeClose: $.noop, // Return false to prevent cancel/save (data.input is available)
 			save: $.noop,         // Save data.input.val() or return false to keep editor open
 			close: $.noop,       // Editor was removed
+			close: function(event, data) {
+				console.log("edit")
+				if( data.save ){
+					if( data.isNew ){
+						// Quick-enter: add new nodes until we hit [enter] on an empty title
+						// $("#tree").trigger("nodeCommand", {cmd: "addSibling"});
+						data.node.editCreateNode("after", makeNodeItem(""));
+					}
+					activateNode(data.node);
+					onOutlineChange();
+				}
+			}
 		},
 		dnd: {
 			autoExpandMS: 400,
@@ -155,16 +182,47 @@ $(document).ready(function() {
 		var node = tree.getActiveNode();
 		activateNode(node);
 	});
-	titleNode = tree.rootNode.getFirstChild();
-	titleNode.setActive();
-	titleNode.editStart();
+	if (newTreeB) {
+		setupNewTree();
+	} else {
+		// var node = tree.getActiveNode();
+		var node  = getTitleNode();
+		activateNode(node);
+	}
 });
+
+function copyToClipboard(some_text) {
+  var $temp = $("<input>");
+  $("body").append($temp);
+  $temp.val(some_text).select();
+  document.execCommand("copy");
+  $temp.remove();
+}
+
+function setupNewTree() {
+	var titleNode = getTitleNode();
+	// titleNode.setActive();
+	activateNode(titleNode);
+	titleNode.editStart();
+}
+
+function getTitleNode() {
+	return tree.rootNode.getFirstChild();
+}
 
 function makeNodeItem(str) {
 	return {title: str, icon: false}
 	// return {title: str, icon: "bullet.png"}
 	// return {title: str, icon: "folder"}
 	// return {title: str}
+}
+
+function makeEmptyOutline(str) {
+	// return makeNodeTitle("Untitled");
+	return [
+		makeNodeTitle("Untitled"), 
+		// makeNodeItem("Item 1")
+	];
 }
 
 function makeNodeTitle(str) {
@@ -252,15 +310,31 @@ function activateNode(node) {
 	$("#tree").focus();
 }
 
+function getJSON_string() {
+	return JSON.stringify(tree.toDict(true));
+}
+
+function updateLocalStorage() {
+  	jsonStore = getJSON_string;
+  	console.log(jsonStore);
+	localStorage.setItem("most_recent", jsonStore);
+}
+
+function onOutlineChange() {
+	updateLocalStorage();
+}
+
 function addNode() {
 	console.log('add');
 	var node = tree.getActiveNode();
 	if (node) {
-		var newData = makeNodeItem("");
-		var newSibling = node.appendSibling(newData);
-		// newSibling.setActive();
-		activateNode(newSibling);
-		newSibling.editStart();
+		node.editCreateNode("after", makeNodeItem(""));
+		// var newData = makeNodeItem("");
+		// var newSibling = node.appendSibling(newData);
+		// // newSibling.setActive();
+		// activateNode(newSibling);
+		// newSibling.editStart();
+		// onOutlineChange();
 	}
 }
 
@@ -277,6 +351,7 @@ function delNode() {
 		}
         node.remove();
 		activateNode(nextNodeToActivate);
+		onOutlineChange();
 	}
 }
 
@@ -289,7 +364,9 @@ function promoteNode() {
 		// node.setActive();
 		// sleep(200);
 		activateNode(node);
+		onOutlineChange();
 	}
+	copyToClipboard("foo");
 }
 
 function demoteNode() {
@@ -302,6 +379,7 @@ function demoteNode() {
 		newParent.setExpanded(true);
 		// node.setActive();
 		activateNode(node);
+		onOutlineChange();
 	}
 }
 
@@ -313,6 +391,7 @@ function moveUpNode() {
 		node.moveTo(newNextSibling, 'before')
 		// node.setActive();
 		activateNode(node);
+		onOutlineChange();
 	}
 }
 
@@ -324,5 +403,19 @@ function moveDownNode() {
 		node.moveTo(newPrevSibling, 'after')
 		// node.setActive();
 		activateNode(node);
+		onOutlineChange();
 	}
+}
+
+function clearOutline() {
+	tree.clear();
+	jsonStore = makeEmptyOutline();
+	tree.reload(jsonStore);
+	setupNewTree();
+	onOutlineChange();
+}
+
+function copyJSON_toClipboard() {
+	copyToClipboard(getJSON_string());
+	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser.")
 }
