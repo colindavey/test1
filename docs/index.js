@@ -66,7 +66,8 @@ $(document).ready(function() {
 		selectMode :1,
 		// forces change of focus to cause change of activation, loosing distinction between focused and active. 
 		autoActivate: true,
-		extensions: ["wide", "edit", "dnd"],
+		extensions: ["wide", "persist", "edit", "dnd"],
+		// extensions: ["wide", "edit", "dnd"],
 		// extensions: ["wide", "edit"],
 		// icon: "foo.png",
 		// icon: "bullet.gif",
@@ -80,6 +81,11 @@ $(document).ready(function() {
 		// 	labelSpacing: "0em",  // Adjust this if padding between icon and label != "3px"
 		// 	levelOfs: "1.5em"       // Adjust this if ul padding != "16px"
 		// },
+		persist: {
+			overrideSource: false,  // true: cookie takes precedence over `source` data attributes.
+    		// store: "auto",     // 'cookie': use cookie, 'local': use localStore, 'session': use sessionStore
+		    types: "active expanded focus selected"  // which status types to store
+		},
 		edit: {
 			// Available options with their default:
 			adjustWidthOfs: 4,   // null: don't adjust input size to content
@@ -148,6 +154,12 @@ $(document).ready(function() {
 			console.log("activating")
 			var node = data.node;
 			adjustButtons(node);
+		},
+		expand: function(event, data) {
+			onOutlineChange();
+		},
+		collapse: function(event, data) {
+			onOutlineChange();
 		},
 		lazyLoad: function(event, data) {
 			// data.result = {url: "ajax-sub2.json"}
