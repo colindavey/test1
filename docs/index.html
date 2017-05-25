@@ -23,20 +23,25 @@
 		<!--<script src="../src/jquery.fancytree.edit.js"></script>-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/jquery.fancytree-all.min.js"></script>
 
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"/>
+		<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"/> -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
 
 		<link rel="stylesheet" href="index.css"/>
 		<script src="index.js"></script>
 	</head>
-	<body class="example">
+	<body>
 		<h1>My Outliner</h1>
-		<div class="controls">
-			<input type="button" value="+" id="addButton" onclick="addNode()">
-			<input type="button" value="-" id="delButton" onclick="delNode()">
-			<input type="button" value="<" id="promoteButton" onclick="promoteNode()">
-			<input type="button" value=">" id="demoteButton" onclick="demoteNode()">
-			<input type="button" value="^" id="moveUpButton" onclick="moveUpNode()">
-			<input type="button" value="v" id="moveDownButton" onclick="moveDownNode()">
+		<div id="editButtons">
+			<!-- Javascript now creates these buttons. -->
+<!-- 			<input type="button" value="+" id="addButton" onclick="doCmd('add')">
+			<input type="button" value="-" id="delButton" onclick="doCmd('del')">
+			<input type="button" value="<" id="promoteButton" onclick="doCmd('promote')">
+			<input type="button" value=">" id="demoteButton" onclick="doCmd('demote')">
+			<input type="button" value="^" id="moveUpButton" onclick="doCmd('moveUp')">
+			<input type="button" value="v" id="moveDownButton" onclick="doCmd('moveDown')">
+ -->		
+ 		</div>
+		<div id="fileButtons">
 			<input type="button" value="clear" id="clearButton" onclick="clearOutline()">
 			<input type="button" value="export" id="copyButton" onclick="copyJSON_toClipboard()">
 		</div>

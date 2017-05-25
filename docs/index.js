@@ -1,37 +1,67 @@
 var tree;
 var titleNode;
 var localStorageSupported = true;
-var glyph_opts = {
-	map: {
-	  doc: "glyphicon glyphicon-file",
-	  docOpen: "glyphicon glyphicon-file",
-	  checkbox: "glyphicon glyphicon-unchecked",
-	  checkboxSelected: "glyphicon glyphicon-check",
-	  checkboxUnknown: "glyphicon glyphicon-share",
-	  dragHelper: "glyphicon glyphicon-play",
-	  dropMarker: "glyphicon-arrow-right", // "glyphicon glyphicon-file", //glyphicon-arrow-right
-	  error: "glyphicon glyphicon-warning-sign",
-	  expanderClosed: "glyphicon glyphicon-menu-right",
-	  expanderLazy: "glyphicon glyphicon-menu-right",  // glyphicon-plus-sign
-	  expanderOpen: "glyphicon glyphicon-menu-down",  // glyphicon-collapse-down
-	  folder: "glyphicon glyphicon-folder-close",
-	  folderOpen: "glyphicon glyphicon-folder-open",
-	  loading: "glyphicon glyphicon-refresh glyphicon-spin"
-	}
-// map: {
-//   expanderClosed: "glyphicon glyphicon-menu-right",
-//   expanderOpen: "glyphicon glyphicon-menu-down"
-// }
+
+var commands = {
+	add: {buttonLabel: "+", menuLabel: "Add"}, 
+	delete: {buttonLabel:"-", menuLabel:"Delete"},
+	promote: {buttonLabel: "<", menuLabel: "Promote"},
+	demote: {buttonLabel: '>', menuLabel: "Demote"},
+	moveUp: {buttonLabel: "^", menuLabel: "Move Up"},
+	moveDown: {buttonLabel: "v", menuLabel: "Move Down"}
 };
+var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
+
+// var glyph_opts = {
+// 	map: {
+// 	  doc: "glyphicon glyphicon-file",
+// 	  docOpen: "glyphicon glyphicon-file",
+// 	  checkbox: "glyphicon glyphicon-unchecked",
+// 	  checkboxSelected: "glyphicon glyphicon-check",
+// 	  checkboxUnknown: "glyphicon glyphicon-share",
+// 	  dragHelper: "glyphicon glyphicon-play",
+// 	  dropMarker: "glyphicon-arrow-right", // "glyphicon glyphicon-file", //glyphicon-arrow-right
+// 	  error: "glyphicon glyphicon-warning-sign",
+// 	  expanderClosed: "glyphicon glyphicon-menu-right",
+// 	  expanderLazy: "glyphicon glyphicon-menu-right",  // glyphicon-plus-sign
+// 	  expanderOpen: "glyphicon glyphicon-menu-down",  // glyphicon-collapse-down
+// 	  folder: "glyphicon glyphicon-folder-close",
+// 	  folderOpen: "glyphicon glyphicon-folder-open",
+// 	  loading: "glyphicon glyphicon-refresh glyphicon-spin"
+// 	}
+// // map: {
+// //   expanderClosed: "glyphicon glyphicon-menu-right",
+// //   expanderOpen: "glyphicon glyphicon-menu-down"
+// // }
+// };
 
 $(document).ready(function() {
-	// !!!redundancy alert
-	$("#addButton").prop('disabled', true);
-	$("#delButton").prop('disabled', true);
-	$("#promoteButton").prop('disabled', true);
-	$("#demoteButton").prop('disabled', true);
-	$("#moveUpButton").prop('disabled', true);
-	$("#moveDownButton").prop('disabled', true);
+	// for (var key in commands) {
+	// 	console.log(key);
+	// }
+	var cmd;
+	var newBut;
+	var newButStr;
+	// initialize the edit buttons
+	for (var key in buttons) {
+		cmd = buttons[key];
+		console.log(cmd);
+		console.log(commands[cmd].buttonLabel);
+		// Make buttons w html like
+		// <input type="button" value="+" id="addButton" onclick="doCmd('add')">
+		newButStr = "<input ";
+		newButStr += "type='button' ";
+		newButStr += "value='" + commands[cmd].buttonLabel + "' ";
+		newButStr += "id='" + cmd  + "Button" + "' ";
+		newButStr += "onclick=" + '"doCmd(' + "'" + cmd  + "'" + ')"';
+		newButStr += '/>';
+		console.log(newButStr);
+	    newBut = $(newButStr);
+	    newBut.appendTo($("#editButtons"));
+	    // initial state is disabled.
+		$("#" + cmd + "Button").prop('disabled', true);
+	}
+
 	if (typeof(Storage) === "undefined") {
 	    // Sorry! No Web Storage support..
 	    localStorageSupported = false;
@@ -151,7 +181,7 @@ $(document).ready(function() {
 		},
 		activate: function(event, data) {
 	//        alert("activate " + data.node);
-			console.log("activating")
+			// console.log("activating")
 			var node = data.node;
 			adjustButtons(node);
 		},
@@ -263,55 +293,92 @@ function isTitle (node) {
 	return ret_val;
 }
 
-function adjustButtons(node) {
+function doCmd(cmd) {
+	console.log(cmd);
+	var node = tree.getActiveNode();
+	// !!!Is this if necessary? 
 	if (node) {
-		var addDisable = false;
-		var delDisable = false;
-		var promoteDisable = false;
-		var demoteDisable = false;
-		var moveUpDisable = false;
-		var moveDownDisable = false;
-		if (isTitle(node)) {
-			console.log("title activated");
-			delDisable = true;
-			promoteDisable = true;
-			demoteDisable = true;
-			moveUpDisable = true;
-			moveDownDisable = true;
-		} else if (isTitle(node.getPrevSibling())) {
-			console.log("title is parent")
-			promoteDisable = true;
-			demoteDisable = true;
-			moveUpDisable = true;
-			if (node.isLastSibling()) {
-				console.log("is last sibling")
-				moveDownDisable = true;
-			}
-		} else {
-			if (node.isFirstSibling()) {
-				console.log("first sibling")
-				moveUpDisable = true;
-				demoteDisable = true;
-			}
-			if (node.isLastSibling()) {
-				console.log("last sibling")
-				moveDownDisable = true;
-			}
-			// if (node.isLastSibling()) {
-			// 	moveDownDisable = true;
-			// }
-			if (node.getParent().isRootNode()) {
-				console.log("parent is root, ie up against left wall")
-				promoteDisable = true;
-			}
+		switch (cmd) {
+			case "add":
+				node.editCreateNode("after", makeNodeItem(""));
+				// var newData = makeNodeItem("");
+				// var newSibling = node.appendSibling(newData);
+				// // newSibling.setActive();
+				// activateNode(newSibling);
+				// newSibling.editStart();
+				// onOutlineChange();
+				break;
+			case "delete":
+				var nextNodeToActivate = node.getNextSibling();
+				if (nextNodeToActivate === null) {
+					nextNodeToActivate = node.getPrevSibling();
+				}
+				if (nextNodeToActivate === null) {
+					nextNodeToActivate = node.getParent();
+				}
+		        node.remove();
+		        node = nextNodeToActivate;
+				break;
+			case "promote":
+				var newSibling = node.getParent();
+				node.moveTo(newSibling, 'after')
+				break;
+			case "demote":
+				var newParent = node.getPrevSibling();
+				node.moveTo(newParent, 'child')
+				// necessary because fancy wants to collapse node after giving it a child. 
+				newParent.setExpanded(true);
+				break;
+			case "moveUp":
+				var newNextSibling = node.getPrevSibling();
+				node.moveTo(newNextSibling, 'before')
+				break;
+			case "moveDown":
+				var newPrevSibling = node.getNextSibling();
+				node.moveTo(newPrevSibling, 'after')
+				break;
 		}
-		// !!!redundancy alert
-		$("#addButton").prop('disabled', addDisable);
-		$("#delButton").prop('disabled', delDisable);
-		$("#promoteButton").prop('disabled', promoteDisable);
-		$("#demoteButton").prop('disabled', demoteDisable);
-		$("#moveUpButton").prop('disabled', moveUpDisable);
-		$("#moveDownButton").prop('disabled', moveDownDisable);
+		if (cmd !== 'add') {
+			activateNode(node);
+			onOutlineChange();
+		}
+	}
+}
+
+function can(cmd, node) {
+	var ret_val;
+	switch (cmd) {
+		case "add":
+			ret_val = false;
+			break;
+		case "delete":
+			ret_val = isTitle(node);
+			break;
+		case "promote":
+			ret_val = isTitle(node) || node.getParent().isRootNode();
+			break;
+		case "demote":
+			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
+			break;
+		case "moveUp":
+			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
+			break;
+		case "moveDown":
+			ret_val = isTitle(node) || node.isLastSibling();
+			break;
+	}
+	return ret_val;
+}
+
+function adjustButtons(node) {
+	// !!!Is this if necessary? 
+	if (node) {
+		for (var key in buttons) {
+			cmd = buttons[key];
+			// console.log("#" + cmd + "Button");
+			// console.log(can(cmd, node));
+			$("#" + cmd + "Button").prop('disabled', can(cmd, node));
+		}
 	}
 }
 
@@ -336,89 +403,6 @@ function updateLocalStorage() {
 
 function onOutlineChange() {
 	updateLocalStorage();
-}
-
-function addNode() {
-	console.log('add');
-	var node = tree.getActiveNode();
-	if (node) {
-		node.editCreateNode("after", makeNodeItem(""));
-		// var newData = makeNodeItem("");
-		// var newSibling = node.appendSibling(newData);
-		// // newSibling.setActive();
-		// activateNode(newSibling);
-		// newSibling.editStart();
-		// onOutlineChange();
-	}
-}
-
-function delNode() {
-	console.log('del')
-	var node = tree.getActiveNode();
-	if (node) {
-		var nextNodeToActivate = node.getNextSibling();
-		if (nextNodeToActivate === null) {
-			nextNodeToActivate = node.getPrevSibling();
-		}
-		if (nextNodeToActivate === null) {
-			nextNodeToActivate = node.getParent();
-		}
-        node.remove();
-		activateNode(nextNodeToActivate);
-		onOutlineChange();
-	}
-}
-
-function promoteNode() {
-	console.log('promote')
-	var node = tree.getActiveNode();
-	if (node) {
-		var newSibling = node.getParent();
-		node.moveTo(newSibling, 'after')
-		// node.setActive();
-		// sleep(200);
-		activateNode(node);
-		onOutlineChange();
-	}
-	copyToClipboard("foo");
-}
-
-function demoteNode() {
-	console.log('demote')
-	var node = tree.getActiveNode();
-	if (node) {
-		var newParent = node.getPrevSibling();
-		node.moveTo(newParent, 'child')
-		// necessary because fancy wants to collapse node after giving it a child. 
-		newParent.setExpanded(true);
-		// node.setActive();
-		activateNode(node);
-		onOutlineChange();
-	}
-}
-
-function moveUpNode() {
-	console.log('up')
-	var node = tree.getActiveNode();
-	if (node) {
-		var newNextSibling = node.getPrevSibling();
-		node.moveTo(newNextSibling, 'before')
-		// node.setActive();
-		activateNode(node);
-		onOutlineChange();
-	}
-}
-
-function moveDownNode() {
-	console.log('down')
-	var node = tree.getActiveNode();
-	if (node) {
-		var newPrevSibling = node.getNextSibling();
-		node.moveTo(newPrevSibling, 'after')
-		// node.setActive();
-		activateNode(node);
-		onOutlineChange();
-	}
 }
 
 function clearOutline() {
