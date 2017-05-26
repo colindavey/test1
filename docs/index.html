@@ -1,33 +1,60 @@
 <html>
 	<head>
 		<title>My Outliner</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" />
+
 	  	<!--<script src="//code.jquery.com/jquery-1.12.1.js"></script>-->
 	  	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
-
+		<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> -->
+		
 		<!--<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>-->
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 
 		<!-- <script src="//cdnjs.cloudflare.com/ajax/libs/js-cookie/2.0.1/js.cookie.min.js"></script> -->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.0.1/js.cookie.min.js"></script>
 
 		<!--<link href="../src/skin-win8/ui.fancytree.css" rel="stylesheet">-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-win8/ui.fancytree.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-win8/ui.fancytree.min.css" />
 		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/skin-bootstrap-n/ui.fancytree.css" /> -->
 
 		<!--<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
+		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" /> -->
 		<!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>-->
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>  
+		<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>   -->
 
 		<!--<script src="../src/jquery.fancytree.js"></script>-->
 		<!--<script src="../src/jquery.fancytree.edit.js"></script>-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.22.5/jquery.fancytree-all.min.js"></script>
 
 		<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"/> -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
+		<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/> -->
+
+		<!-- <script src="//cdn.jsdelivr.net/jquery.ui-contextmenu/1/jquery.ui-contextmenu.min.js"></script> -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.ui-contextmenu/1.17.0/jquery.ui-contextmenu.min.js"></script>
 
 		<link rel="stylesheet" href="index.css"/>
 		<script src="index.js"></script>
+		<style type="text/css">
+			.ui-menu {
+		    	width: 180px;
+		    	font-size: 63%;
+				z-index: 999;
+			}
+			.ui-menu kbd { /* Keyboard shortcuts for ui-contextmenu titles */
+				/*font-family: monospace;*/
+				float: right;
+			}
+		  /* custom alignment (set by 'renderColumns'' event) */
+			td.alignRight {
+				text-align: right;
+			}
+			td.alignCenter {
+		    	text-align: center;
+			}
+			td input[type=input] {
+				width: 40px;
+			}
+		</style>
 	</head>
 	<body>
 		<h1>My Outliner</h1>
@@ -47,7 +74,8 @@
 		</div>
 
 		<!-- Add a <div> element where the tree should appear: -->
-		<div id="tree">
+		<!-- <div id="tree"> -->
+		<div class="hasmenu" id="tree">
 		</div>
 
 		<!-- (Irrelevant source removed.) -->

@@ -3,14 +3,16 @@ var titleNode;
 var localStorageSupported = true;
 
 var commands = {
-	add: {buttonLabel: "+", menuLabel: "Add"}, 
-	delete: {buttonLabel:"-", menuLabel:"Delete"},
-	promote: {buttonLabel: "<", menuLabel: "Promote"},
-	demote: {buttonLabel: '>', menuLabel: "Demote"},
-	moveUp: {buttonLabel: "^", menuLabel: "Move Up"},
-	moveDown: {buttonLabel: "v", menuLabel: "Move Down"}
+	add: {buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
+	delete: {buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
+	promote: {buttonLabel: "<", menuLabel: "Promote", kbd: "ctrl+h"},
+	demote: {buttonLabel: '>', menuLabel: "Demote", kbd: "ctrl+l"},
+	moveUp: {buttonLabel: "^", menuLabel: "Move Up", kbd: "ctrl+k"},
+	moveDown: {buttonLabel: "v", menuLabel: "Move Down", kbd: "ctrl+j"}
 };
 var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
+// var menuItems = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
+var menuItems = ["add", "delete", "----", "promote", "demote", "----", "moveUp", "moveDown"];
 
 // var glyph_opts = {
 // 	map: {
@@ -45,13 +47,14 @@ $(document).ready(function() {
 	// initialize the edit buttons
 	for (var key in buttons) {
 		cmd = buttons[key];
+		buttonLabel = commands[cmd].buttonLabel;
 		console.log(cmd);
 		console.log(commands[cmd].buttonLabel);
 		// Make buttons w html like
 		// <input type="button" value="+" id="addButton" onclick="doCmd('add')">
 		newButStr = "<input ";
 		newButStr += "type='button' ";
-		newButStr += "value='" + commands[cmd].buttonLabel + "' ";
+		newButStr += "value='" + buttonLabel + "' ";
 		newButStr += "id='" + cmd  + "Button" + "' ";
 		newButStr += "onclick=" + '"doCmd(' + "'" + cmd  + "'" + ')"';
 		newButStr += '/>';
@@ -61,6 +64,26 @@ $(document).ready(function() {
 	    // initial state is disabled.
 		$("#" + cmd + "Button").prop('disabled', true);
 	}
+	// initialize the menu items
+	var menuItemArray = [];
+	var item;
+	for (var key in menuItems) {
+		cmd = menuItems[key];
+		item = {title: "----"};
+		if (cmd !== '----') {
+			menuLabel = commands[cmd].menuLabel;
+			kbd = commands[cmd].kbd;
+			menuLabel += '<kbd>' + kbd + '</kbd>';
+			item = {title: menuLabel, cmd: cmd, kbd: kbd};
+			// item = 
+			// item = '{';
+			// item += 'title: ' + menuLabel;
+			// item += ', cmd: ' +  cmd;
+			// item += '},';
+		}
+		menuItemArray[menuItemArray.length] = item;
+	}
+	console.log (menuItemArray);
 
 	if (typeof(Storage) === "undefined") {
 	    // Sorry! No Web Storage support..
@@ -97,6 +120,7 @@ $(document).ready(function() {
 		// forces change of focus to cause change of activation, loosing distinction between focused and active. 
 		autoActivate: true,
 		extensions: ["wide", "persist", "edit", "dnd"],
+		// extensions: ["persist", "edit", "dnd"],
 		// extensions: ["wide", "edit", "dnd"],
 		// extensions: ["wide", "edit"],
 		// icon: "foo.png",
@@ -218,6 +242,37 @@ $(document).ready(function() {
 	//   },
 	});
 	tree = $("#tree").fancytree("getTree");
+	$("#tree").on("keydown", function(e){
+		var cmd = '';
+	    var eStr = $.ui.fancytree.eventToString(e);
+	    console.log( eStr );
+	    // !!!This will be automoated from cmd table.
+	    switch( eStr ) {
+			case "ctrl+o":
+				cmd = 'add';
+				break;
+			case "del":
+				cmd = 'delete';
+				break;
+			case "ctrl+h":
+				cmd = 'promote';
+				break;
+			case "ctrl+l":
+				cmd = 'demote';
+				break;
+			case "ctrl+k":
+				cmd = 'moveUp';
+				break;
+			case "ctrl+j":
+				cmd = 'moveDown';
+				break;
+	    }
+	    if (cmd) {
+	    	if (can(cmd, tree.getActiveNode())) {
+	 			doCmd(cmd);
+	    	}
+	    }
+	});
 	$("#tree").focus(function() {
   		// alert( "Handler for .focus() called." );
   		console.log("tree focus");
@@ -231,6 +286,37 @@ $(document).ready(function() {
 		var node  = getTitleNode();
 		activateNode(node);
 	}
+	/*
+	* Context menu (https://github.com/mar10/jquery-ui-contextmenu)
+	*/
+	$("#tree").contextmenu({
+		delegate: "span.fancytree-node",
+		// menu: [
+		// 	{title: "Edit <kbd>[F2]</kbd>", cmd: "rename" },
+		// 	{title: "Delete <kbd>[Del]</kbd>", cmd: "remove" },
+		// 	{title: "----"},
+		// 	{title: "New sibling <kbd>[Ctrl+N]</kbd>", cmd: "addSibling" },
+		// 	{title: "New child <kbd>[Ctrl+Shift+N]</kbd>", cmd: "addChild" },
+		// 	{title: "----"},
+		// 	{title: "Cut <kbd>Ctrl+X</kbd>", cmd: "cut" },
+		// 	{title: "Copy <kbd>Ctrl-C</kbd>", cmd: "copy" },
+		// 	{title: "Paste as child<kbd>Ctrl+V</kbd>", cmd: "paste" }
+		// ],
+		menu: menuItemArray,
+		beforeOpen: function(event, ui) {
+			var node = $.ui.fancytree.getNode(ui.target);
+			adjustMenus(node);
+			node.setActive();
+		},
+		select: function(event, ui) {
+			// delay the event, so the menu can close and the click event does
+			// not interfere with the edit control
+			setTimeout(function(){
+				console.log(ui.cmd);
+				doCmd(ui.cmd);
+			}, 100);
+		}
+	});
 });
 
 function copyToClipboard(some_text) {
@@ -367,7 +453,17 @@ function can(cmd, node) {
 			ret_val = isTitle(node) || node.isLastSibling();
 			break;
 	}
-	return ret_val;
+	return !ret_val;
+}
+
+function adjustMenus(node) {
+	// !!!Is this if necessary? 
+	if (node) {
+		for (var key in menuItems) {
+			cmd = menuItems[key];
+			$("#tree").contextmenu("enableEntry", cmd, can(cmd, node));
+		}
+	}
 }
 
 function adjustButtons(node) {
@@ -375,9 +471,7 @@ function adjustButtons(node) {
 	if (node) {
 		for (var key in buttons) {
 			cmd = buttons[key];
-			// console.log("#" + cmd + "Button");
-			// console.log(can(cmd, node));
-			$("#" + cmd + "Button").prop('disabled', can(cmd, node));
+			$("#" + cmd + "Button").prop('disabled', !can(cmd, node));
 		}
 	}
 }
