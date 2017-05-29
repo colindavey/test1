@@ -6,7 +6,7 @@
 	  	<!--<script src="//code.jquery.com/jquery-1.12.1.js"></script>-->
 	  	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
 		<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> -->
-		
+
 		<!--<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 
@@ -57,7 +57,14 @@
 		</style>
 	</head>
 	<body>
-		<h1>My Outliner</h1>
+		<p><b>Keyboard tips:</b> Check right menu for editing keyboard shortcuts. For navigation, use the arrow keys or:</p>
+		<ul>
+		<li><b>j</b> to move down.</li>
+		<li><b>shift+j</b> to jump down.</li>
+		<li><b>k</b> to move up.</li>
+		<li><b>shift+k</b> to jump up.</li>
+		</ul>
+		<p>If the item you are jumping to (for up) or from (for down) has children, <i>jump</i> jumps over the children, otherwise it jumps to the first (up) or last (down) sibling.</p>
 		<div id="editButtons">
 			<!-- Javascript now creates these buttons. -->
 <!-- 			<input type="button" value="+" id="addButton" onclick="doCmd('add')">
@@ -70,7 +77,10 @@
  		</div>
 		<div id="fileButtons">
 			<input type="button" value="clear" id="clearButton" onclick="clearOutline()">
-			<input type="button" value="export" id="copyButton" onclick="copyJSON_toClipboard()">
+			<input type="button" value="clipboard" id="clipboardButton" onclick="copyJSON_toClipboard()">
+			<input type="button" value="import" id="importButton" onclick="importFile()">
+			<input type="button" value="export" id="exportButton" onclick="exportFile()">
+			<input type="file" name="fileupload" value="fileupload" id="fileupload">
 		</div>
 
 		<!-- Add a <div> element where the tree should appear: -->

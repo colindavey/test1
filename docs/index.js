@@ -2,54 +2,150 @@ var tree;
 var titleNode;
 var localStorageSupported = true;
 
-var commands = {
-	add: {buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
-	delete: {buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
-	promote: {buttonLabel: "<", menuLabel: "Promote", kbd: "ctrl+h"},
-	demote: {buttonLabel: '>', menuLabel: "Demote", kbd: "ctrl+l"},
-	moveUp: {buttonLabel: "^", menuLabel: "Move Up", kbd: "ctrl+k"},
-	moveDown: {buttonLabel: "v", menuLabel: "Move Down", kbd: "ctrl+j"}
-};
-var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
-// var menuItems = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
-var menuItems = ["add", "delete", "----", "promote", "demote", "----", "moveUp", "moveDown"];
+var commands = [
+	{cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
+	{cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "ctrl+shift+o"}, 
+	{cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "alt+ctrl+o"}, 
+	{cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "alt+ctrl+shift+o"}, 
+	{cmd: "delete", buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
+	{cmd: "promote", buttonLabel: "<", menuLabel: "Promote", kbd: "ctrl+h"},
+	{cmd: "promoteAbove", buttonLabel: "<^", menuLabel: "Promote Above", kbd: "ctrl+shift+h"},
+	{cmd: "demote", buttonLabel: '>', menuLabel: "Demote", kbd: "ctrl+l"},
+	{cmd: "demoteFirstChild", buttonLabel: '>Y', menuLabel: "Demote To First Child", kbd: "ctrl+shift+l"},
+	{cmd: "moveUp", buttonLabel: "^", menuLabel: "Move Up", kbd: "ctrl+k"},
+	{cmd: "moveDown", buttonLabel: "v", menuLabel: "Move Down", kbd: "ctrl+j"}
+];
+var buttons = ["add", "addFirstChild", "delete", "promote", "demote", "moveUp", "moveDown"];
+var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "----", "promote", "promoteAbove", "demote", "demoteFirstChild", "----", "moveUp", "moveDown"];
 
-// var glyph_opts = {
-// 	map: {
-// 	  doc: "glyphicon glyphicon-file",
-// 	  docOpen: "glyphicon glyphicon-file",
-// 	  checkbox: "glyphicon glyphicon-unchecked",
-// 	  checkboxSelected: "glyphicon glyphicon-check",
-// 	  checkboxUnknown: "glyphicon glyphicon-share",
-// 	  dragHelper: "glyphicon glyphicon-play",
-// 	  dropMarker: "glyphicon-arrow-right", // "glyphicon glyphicon-file", //glyphicon-arrow-right
-// 	  error: "glyphicon glyphicon-warning-sign",
-// 	  expanderClosed: "glyphicon glyphicon-menu-right",
-// 	  expanderLazy: "glyphicon glyphicon-menu-right",  // glyphicon-plus-sign
-// 	  expanderOpen: "glyphicon glyphicon-menu-down",  // glyphicon-collapse-down
-// 	  folder: "glyphicon glyphicon-folder-close",
-// 	  folderOpen: "glyphicon glyphicon-folder-open",
-// 	  loading: "glyphicon glyphicon-refresh glyphicon-spin"
-// 	}
-// // map: {
-// //   expanderClosed: "glyphicon glyphicon-menu-right",
-// //   expanderOpen: "glyphicon glyphicon-menu-down"
-// // }
-// };
+function doCmd(cmd) {
+	console.log(cmd);
+	var node = tree.getActiveNode();
+	// !!!Is this if necessary? 
+	if (node) {
+		switch (cmd) {
+			case "add":
+				node.editCreateNode("after", makeNodeItem(""));
+				// var newData = makeNodeItem("");
+				// var newSibling = node.appendSibling(newData);
+				// // newSibling.setActive();
+				// activateNode(newSibling);
+				// newSibling.editStart();
+				// onOutlineChange();
+				break;
+			case "addAbove":
+				node.editCreateNode("before", makeNodeItem(""));
+				break;
+			case "addFirstChild":
+				if (!node.hasChildren()) {
+					node.editCreateNode("child", makeNodeItem(""));
+				}
+				else {
+					node.getFirstChild().editCreateNode("before", makeNodeItem(""));
+				}
+				break;
+			case "addLastChild":
+				node.editCreateNode("child", makeNodeItem(""));
+				break;
+			case "delete":
+				var nextNodeToActivate = node.getNextSibling();
+				if (nextNodeToActivate === null) {
+					nextNodeToActivate = node.getPrevSibling();
+				}
+				if (nextNodeToActivate === null) {
+					nextNodeToActivate = node.getParent();
+				}
+		        node.remove();
+		        node = nextNodeToActivate;
+				break;
+			case "promote":
+				var newSibling = node.getParent();
+				node.moveTo(newSibling, 'after')
+				break;
+			case "promoteAbove":
+				var newSibling = node.getParent();
+				node.moveTo(newSibling, 'before')
+				break;
+			case "demote":
+				var newParent = node.getPrevSibling();
+				node.moveTo(newParent, 'child')
+				// necessary because fancy wants to collapse node after giving it a child. 
+				newParent.setExpanded(true);
+				break;
+			case "demoteFirstChild":
+				var newParent = node.getPrevSibling();
+				if (newParent.hasChildren()) {
+					var newAfterNode = newParent.getFirstChild();
+					node.moveTo(newAfterNode, 'before')
+				}
+				else {
+					node.moveTo(newParent, 'child')
+				}
+				// necessary because fancy wants to collapse node after giving it a child. 
+				newParent.setExpanded(true);
+				break;
+			case "moveUp":
+				var newNextSibling = node.getPrevSibling();
+				node.moveTo(newNextSibling, 'before')
+				break;
+			case "moveDown":
+				var newPrevSibling = node.getNextSibling();
+				node.moveTo(newPrevSibling, 'after')
+				break;
+		}
+		if (cmd !== 'add' && cmd !== 'addAbove' && cmd !== 'addFirstChild' && cmd !== 'addLastChild') {
+			activateNode(node);
+			onOutlineChange();
+		} else {
+			return false;
+		}
+	}
+}
+
+function can(cmd, node) {
+	var ret_val;
+	// the switch statement determines if it *can't* do it. the result gets negated in the return statement. 
+	switch (cmd) {
+		case "add":
+			ret_val = false;
+			break;
+		case "addAbove":
+		case "addFirstChild":
+		case "addFirstChildAbove":
+		case "delete":
+			ret_val = isTitle(node);
+			break;
+		case "promoteAbove":
+		case "promote":
+			ret_val = isTitle(node) || node.getParent().isRootNode();
+			break;
+		case "demote":
+		case "demoteFirstChild":
+		case "moveUp":
+			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
+			break;
+		case "moveDown":
+			ret_val = isTitle(node) || node.isLastSibling();
+			break;
+	}
+	return !ret_val;
+}
 
 $(document).ready(function() {
-	// for (var key in commands) {
-	// 	console.log(key);
-	// }
 	var cmd;
 	var newBut;
 	var newButStr;
+	var cmd_el;
 	// initialize the edit buttons
 	for (var key in buttons) {
 		cmd = buttons[key];
-		buttonLabel = commands[cmd].buttonLabel;
+
+			// buttonLabel = commands[cmd].buttonLabel;
+		cmd_el = commands.find(commands => commands.cmd === cmd);
+		buttonLabel = cmd_el.buttonLabel;
+
 		console.log(cmd);
-		console.log(commands[cmd].buttonLabel);
+		console.log(buttonLabel);
 		// Make buttons w html like
 		// <input type="button" value="+" id="addButton" onclick="doCmd('add')">
 		newButStr = "<input ";
@@ -69,21 +165,20 @@ $(document).ready(function() {
 	var item;
 	for (var key in menuItems) {
 		cmd = menuItems[key];
+		console.log(cmd);
 		item = {title: "----"};
 		if (cmd !== '----') {
-			menuLabel = commands[cmd].menuLabel;
-			kbd = commands[cmd].kbd;
+			// menuLabel = commands[cmd].menuLabel;
+			// kbd = commands[cmd].kbd;
+			cmd_el = commands.find(commands => commands.cmd === cmd);
+			menuLabel = cmd_el.menuLabel;
+			kbd = cmd_el.kbd;
+
 			menuLabel += '<kbd>' + kbd + '</kbd>';
 			item = {title: menuLabel, cmd: cmd, kbd: kbd};
-			// item = 
-			// item = '{';
-			// item += 'title: ' + menuLabel;
-			// item += ', cmd: ' +  cmd;
-			// item += '},';
 		}
 		menuItemArray[menuItemArray.length] = item;
 	}
-	console.log (menuItemArray);
 
 	if (typeof(Storage) === "undefined") {
 	    // Sorry! No Web Storage support..
@@ -208,6 +303,9 @@ $(document).ready(function() {
 			// console.log("activating")
 			var node = data.node;
 			adjustButtons(node);
+			console.log("index " + node);
+			// console.log("index " + node.getIndex());
+			// console.log("index"); //" + node.getIndex());
 		},
 		expand: function(event, data) {
 			onOutlineChange();
@@ -242,36 +340,86 @@ $(document).ready(function() {
 	//   },
 	});
 	tree = $("#tree").fancytree("getTree");
+	$.ui.fancytree.debugLevel = 2;
 	$("#tree").on("keydown", function(e){
-		var cmd = '';
 	    var eStr = $.ui.fancytree.eventToString(e);
+		var cmd = '';
+	    var node = tree.getActiveNode();
 	    console.log( eStr );
-	    // !!!This will be automoated from cmd table.
-	    switch( eStr ) {
-			case "ctrl+o":
-				cmd = 'add';
-				break;
-			case "del":
-				cmd = 'delete';
-				break;
-			case "ctrl+h":
-				cmd = 'promote';
-				break;
-			case "ctrl+l":
-				cmd = 'demote';
-				break;
-			case "ctrl+k":
-				cmd = 'moveUp';
-				break;
-			case "ctrl+j":
-				cmd = 'moveDown';
-				break;
-	    }
-	    if (cmd) {
-	    	if (can(cmd, tree.getActiveNode())) {
+	    // try edit commands
+		cmd_el = commands.find(commands => commands.kbd === eStr);
+		if (cmd_el) {
+			cmd = cmd_el.cmd;
+	    	if (can(cmd, node)) {
 	 			doCmd(cmd);
 	    	}
 	    }
+	    // try navigation commands
+	    else {
+	    	var nextNode = null;
+	    	KC = $.ui.keyCode;
+		    switch( eStr ) {
+		    	// down to next line
+				case "j":
+					node.navigate(KC.DOWN, true);
+					break;
+		    	// jump down:
+		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
+		    	// otherwise, jump to last sibling (parent's last child)
+		    	// otherwise, treat like normal down nav. 
+				case "shift+j":
+					if (node.hasChildren() && node.isExpanded()) {
+						nextNode = node.getNextSibling();
+					} 
+					else {
+						nextNode = node.getParent().getLastChild();
+						if (nextNode === node) {
+							nextNode = null;
+						}
+					}
+					if (nextNode) {
+						activateNode(nextNode);
+					}
+					else {
+						node.navigate(KC.DOWN, true);
+					}
+					break;
+		    	// up to next line
+				case "k":
+					node.navigate(KC.UP, true);
+					break;
+		    	// jump up:
+		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
+		    	// otherwise, jump to first sibling (parent's first child)
+		    	// otherwise, treat like normal down nav. 
+				case "shift+k":
+					var prevSibNode = node.getPrevSibling();
+					if (prevSibNode !== null) {
+						if (prevSibNode.hasChildren() && prevSibNode.isExpanded()) {
+							nextNode = prevSibNode;
+						} 
+						else {
+							nextNode = node.getParent().getFirstChild();
+							if (nextNode === node) {
+								nextNode = null;
+							}
+						}
+					}
+					if (nextNode) {
+						activateNode(nextNode);
+					}
+					else {
+						node.navigate(KC.UP, true);
+					}
+					break;
+				case "space":
+					// cmd = 'expand/collapse';
+					// node.setExpanded(!node.isExpanded());
+					node.toggleExpanded();
+					break;
+		    }
+	    }
+	    // console.log( cmd );
 	});
 	$("#tree").focus(function() {
   		// alert( "Handler for .focus() called." );
@@ -286,6 +434,7 @@ $(document).ready(function() {
 		var node  = getTitleNode();
 		activateNode(node);
 	}
+	// $("#tree").focus();
 	/*
 	* Context menu (https://github.com/mar10/jquery-ui-contextmenu)
 	*/
@@ -379,83 +528,6 @@ function isTitle (node) {
 	return ret_val;
 }
 
-function doCmd(cmd) {
-	console.log(cmd);
-	var node = tree.getActiveNode();
-	// !!!Is this if necessary? 
-	if (node) {
-		switch (cmd) {
-			case "add":
-				node.editCreateNode("after", makeNodeItem(""));
-				// var newData = makeNodeItem("");
-				// var newSibling = node.appendSibling(newData);
-				// // newSibling.setActive();
-				// activateNode(newSibling);
-				// newSibling.editStart();
-				// onOutlineChange();
-				break;
-			case "delete":
-				var nextNodeToActivate = node.getNextSibling();
-				if (nextNodeToActivate === null) {
-					nextNodeToActivate = node.getPrevSibling();
-				}
-				if (nextNodeToActivate === null) {
-					nextNodeToActivate = node.getParent();
-				}
-		        node.remove();
-		        node = nextNodeToActivate;
-				break;
-			case "promote":
-				var newSibling = node.getParent();
-				node.moveTo(newSibling, 'after')
-				break;
-			case "demote":
-				var newParent = node.getPrevSibling();
-				node.moveTo(newParent, 'child')
-				// necessary because fancy wants to collapse node after giving it a child. 
-				newParent.setExpanded(true);
-				break;
-			case "moveUp":
-				var newNextSibling = node.getPrevSibling();
-				node.moveTo(newNextSibling, 'before')
-				break;
-			case "moveDown":
-				var newPrevSibling = node.getNextSibling();
-				node.moveTo(newPrevSibling, 'after')
-				break;
-		}
-		if (cmd !== 'add') {
-			activateNode(node);
-			onOutlineChange();
-		}
-	}
-}
-
-function can(cmd, node) {
-	var ret_val;
-	switch (cmd) {
-		case "add":
-			ret_val = false;
-			break;
-		case "delete":
-			ret_val = isTitle(node);
-			break;
-		case "promote":
-			ret_val = isTitle(node) || node.getParent().isRootNode();
-			break;
-		case "demote":
-			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
-			break;
-		case "moveUp":
-			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
-			break;
-		case "moveDown":
-			ret_val = isTitle(node) || node.isLastSibling();
-			break;
-	}
-	return !ret_val;
-}
-
 function adjustMenus(node) {
 	// !!!Is this if necessary? 
 	if (node) {
@@ -510,4 +582,12 @@ function clearOutline() {
 function copyJSON_toClipboard() {
 	copyToClipboard(getJSON_string());
 	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
+}
+
+function exportFile() {
+	alert("Export: Not yet...")
+}
+
+function importFile() {
+	alert("Import: Not yet...")
 }
