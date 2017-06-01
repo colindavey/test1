@@ -1,13 +1,28 @@
 var tree;
 var titleNode;
 var localStorageSupported = true;
+var clipboard = null;
+var exportText = null;
 
 var commands = [
-	{cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
-	{cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "ctrl+shift+o"}, 
-	{cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "alt+ctrl+o"}, 
-	{cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "alt+ctrl+shift+o"}, 
+	// {cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
+	// {cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "ctrl+shift+o"}, 
+	// {cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "alt+ctrl+o"}, 
+	// {cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "alt+ctrl+shift+o"}, 
+	{cmd: "editStart", buttonLabel: "", menuLabel: "", kbd: "space"}, 
+	{cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "return"},
+	{cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "shift+return"}, 
+	{cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "ctrl+shift+return"}, 
+	{cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "ctrl+return"}, 
 	{cmd: "delete", buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
+	{cmd: "cut", buttonLabel:"", menuLabel:"Cut", kbd: "ctr+x"},
+	{cmd: "copy", buttonLabel:"", menuLabel:"Copy", kbd: "ctr+c"},
+	{cmd: "paste", buttonLabel:"", menuLabel:"Paste", kbd: "ctr+v"},
+	{cmd: "pasteAbove", buttonLabel:"", menuLabel:"Paste Above", kbd: ""},
+	{cmd: "pasteFirstChild", buttonLabel:"", menuLabel:"Paste First Child", kbd: ""},
+	{cmd: "pasteLastChild", buttonLabel:"", menuLabel:"Paste Last Child", kbd: ""},
+
+
 	{cmd: "promote", buttonLabel: "<", menuLabel: "Promote", kbd: "ctrl+h"},
 	{cmd: "promoteAbove", buttonLabel: "<^", menuLabel: "Promote Above", kbd: "ctrl+shift+h"},
 	{cmd: "demote", buttonLabel: '>', menuLabel: "Demote", kbd: "ctrl+l"},
@@ -15,16 +30,21 @@ var commands = [
 	{cmd: "moveUp", buttonLabel: "^", menuLabel: "Move Up", kbd: "ctrl+k"},
 	{cmd: "moveDown", buttonLabel: "v", menuLabel: "Move Down", kbd: "ctrl+j"}
 ];
-var buttons = ["add", "addFirstChild", "delete", "promote", "demote", "moveUp", "moveDown"];
-var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "----", "promote", "promoteAbove", "demote", "demoteFirstChild", "----", "moveUp", "moveDown"];
+var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
+var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "----", "cut", "copy", "paste", "pasteAbove", "pasteFirstChild", "pasteLastChild", "----", "promote", "promoteAbove", "demote", "demoteFirstChild", "----", "moveUp", "moveDown"];
 
+// handle edit commands
 function doCmd(cmd) {
 	console.log(cmd);
 	var node = tree.getActiveNode();
 	// !!!Is this if necessary? 
 	if (node) {
 		switch (cmd) {
+			case "editStart":
+				node.editStart();
+				break;
 			case "add":
+				// node.editStart();
 				node.editCreateNode("after", makeNodeItem(""));
 				// var newData = makeNodeItem("");
 				// var newSibling = node.appendSibling(newData);
@@ -48,27 +68,54 @@ function doCmd(cmd) {
 				node.editCreateNode("child", makeNodeItem(""));
 				break;
 			case "delete":
-				var nextNodeToActivate = node.getNextSibling();
-				if (nextNodeToActivate === null) {
-					nextNodeToActivate = node.getPrevSibling();
-				}
-				if (nextNodeToActivate === null) {
-					nextNodeToActivate = node.getParent();
-				}
-		        node.remove();
-		        node = nextNodeToActivate;
+				// var nextNodeToActivate = node.getNextSibling();
+				// if (nextNodeToActivate === null) {
+				// 	nextNodeToActivate = node.getPrevSibling();
+				// }
+				// if (nextNodeToActivate === null) {
+				// 	nextNodeToActivate = node.getParent();
+				// }
+		  //       node.remove();
+		        node = removeNode(node);
 				break;
+			case "cut":
+				toClipboard(node);
+		        node = removeNode(node);
+				break;
+			case "copy":
+				toClipboard(node);
+				break;
+			case "paste":
+				// node = node.addChildren(clipboard);
+				node = node.addNode(clipboard, 'after');
+				break;
+
+			case "pasteAbove":
+				node = node.addNode(clipboard, 'before');
+				break;
+			case "pasteFirstChild":
+				if (!node.hasChildren()) {
+					node = node.addNode(clipboard, 'child');
+				}
+				else {
+					node = node.getFirstChild().addNode(clipboard, "before");
+				}
+				break;
+			case "pasteLastChild":
+				node = node.addNode(clipboard, 'child');
+				break;
+
 			case "promote":
 				var newSibling = node.getParent();
-				node.moveTo(newSibling, 'after')
+				node.moveTo(newSibling, 'after');
 				break;
 			case "promoteAbove":
 				var newSibling = node.getParent();
-				node.moveTo(newSibling, 'before')
+				node.moveTo(newSibling, 'before');
 				break;
 			case "demote":
 				var newParent = node.getPrevSibling();
-				node.moveTo(newParent, 'child')
+				node.moveTo(newParent, 'child');
 				// necessary because fancy wants to collapse node after giving it a child. 
 				newParent.setExpanded(true);
 				break;
@@ -76,21 +123,21 @@ function doCmd(cmd) {
 				var newParent = node.getPrevSibling();
 				if (newParent.hasChildren()) {
 					var newAfterNode = newParent.getFirstChild();
-					node.moveTo(newAfterNode, 'before')
+					node.moveTo(newAfterNode, 'before');
 				}
 				else {
-					node.moveTo(newParent, 'child')
+					node.moveTo(newParent, 'child');
 				}
 				// necessary because fancy wants to collapse node after giving it a child. 
 				newParent.setExpanded(true);
 				break;
 			case "moveUp":
 				var newNextSibling = node.getPrevSibling();
-				node.moveTo(newNextSibling, 'before')
+				node.moveTo(newNextSibling, 'before');
 				break;
 			case "moveDown":
 				var newPrevSibling = node.getNextSibling();
-				node.moveTo(newPrevSibling, 'after')
+				node.moveTo(newPrevSibling, 'after');
 				break;
 		}
 		if (cmd !== 'add' && cmd !== 'addAbove' && cmd !== 'addFirstChild' && cmd !== 'addLastChild') {
@@ -102,6 +149,7 @@ function doCmd(cmd) {
 	}
 }
 
+// test if the edit commands are possible for the purpose of disabling menu items and buttons
 function can(cmd, node) {
 	var ret_val;
 	// the switch statement determines if it *can't* do it. the result gets negated in the return statement. 
@@ -109,11 +157,19 @@ function can(cmd, node) {
 		case "add":
 			ret_val = false;
 			break;
+		case "paste":
+			ret_val = clipboard === null;
+			break;
 		case "addAbove":
 		case "addFirstChild":
-		case "addFirstChildAbove":
+		case "addLastChild":
 		case "delete":
 			ret_val = isTitle(node);
+			break;
+		case "pasteAbove":
+		case "pasteFirstChild":
+		case "pasteLastChild":
+			ret_val = isTitle(node) || clipboard === null;
 			break;
 		case "promoteAbove":
 		case "promote":
@@ -131,6 +187,24 @@ function can(cmd, node) {
 	return !ret_val;
 }
 
+function toClipboard(node) {
+	clipboard = node.toDict(function(n){
+		delete n.key;
+	});
+}
+
+function removeNode(node) {
+	var nextNodeToActivate = node.getNextSibling();
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = node.getPrevSibling();
+	}
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = node.getParent();
+	}
+    node.remove();
+    return nextNodeToActivate;
+}
+
 $(document).ready(function() {
 	var cmd;
 	var newBut;
@@ -144,8 +218,8 @@ $(document).ready(function() {
 		cmd_el = commands.find(commands => commands.cmd === cmd);
 		buttonLabel = cmd_el.buttonLabel;
 
-		console.log(cmd);
-		console.log(buttonLabel);
+		// console.log(cmd);
+		// console.log(buttonLabel);
 		// Make buttons w html like
 		// <input type="button" value="+" id="addButton" onclick="doCmd('add')">
 		newButStr = "<input ";
@@ -154,7 +228,7 @@ $(document).ready(function() {
 		newButStr += "id='" + cmd  + "Button" + "' ";
 		newButStr += "onclick=" + '"doCmd(' + "'" + cmd  + "'" + ')"';
 		newButStr += '/>';
-		console.log(newButStr);
+		// console.log(newButStr);
 	    newBut = $(newButStr);
 	    newBut.appendTo($("#editButtons"));
 	    // initial state is disabled.
@@ -165,7 +239,7 @@ $(document).ready(function() {
 	var item;
 	for (var key in menuItems) {
 		cmd = menuItems[key];
-		console.log(cmd);
+		// console.log(cmd);
 		item = {title: "----"};
 		if (cmd !== '----') {
 			// menuLabel = commands[cmd].menuLabel;
@@ -239,7 +313,10 @@ $(document).ready(function() {
 			// Available options with their default:
 			adjustWidthOfs: 4,   // null: don't adjust input size to content
 			inputCss: { minWidth: "3em" },
-			triggerStart: ["f2", "dblclick", "shift+click", "mac+enter"],
+			triggerStart: ["f2", "dblclick", "shift+click"],
+			// triggerStart: ["f2", "dblclick", "shift+click", "mac+enter"],
+			// f3 and space don't work
+			// triggerStart: ["f3", "dblclick", "shift+click", "space"],
 			beforeEdit: $.noop,  // Return false to prevent edit mode
 			// edit: $.noop,        // Editor was opened (available as data.input)
 			edit: function(event, data){
@@ -250,7 +327,7 @@ $(document).ready(function() {
 			save: $.noop,         // Save data.input.val() or return false to keep editor open
 			close: $.noop,       // Editor was removed
 			close: function(event, data) {
-				console.log("edit")
+				// console.log("edit")
 				if( data.save ){
 					onOutlineChange();
 					if( data.isNew ) {
@@ -303,7 +380,7 @@ $(document).ready(function() {
 			// console.log("activating")
 			var node = data.node;
 			adjustButtons(node);
-			console.log("index " + node);
+			// console.log("index " + node);
 			// console.log("index " + node.getIndex());
 			// console.log("index"); //" + node.getIndex());
 		},
@@ -367,6 +444,7 @@ $(document).ready(function() {
 		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
 		    	// otherwise, jump to last sibling (parent's last child)
 		    	// otherwise, treat like normal down nav. 
+				case "shift+down":
 				case "shift+j":
 					if (node.hasChildren() && node.isExpanded()) {
 						nextNode = node.getNextSibling();
@@ -392,6 +470,7 @@ $(document).ready(function() {
 		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
 		    	// otherwise, jump to first sibling (parent's first child)
 		    	// otherwise, treat like normal down nav. 
+				case "shift+up":
 				case "shift+k":
 					var prevSibNode = node.getPrevSibling();
 					if (prevSibNode !== null) {
@@ -412,10 +491,31 @@ $(document).ready(function() {
 						node.navigate(KC.UP, true);
 					}
 					break;
-				case "space":
-					// cmd = 'expand/collapse';
-					// node.setExpanded(!node.isExpanded());
+				case "shift+right":
+					node.visit(function(node){
+				        node.setExpanded(true);
+				    }, true);
+					break;
+				case "shift+left":
+					node.visit(function(node){
+				        node.setExpanded(false);
+				    }, true);
+					break;
+				case "ctrl+space":
 					node.toggleExpanded();
+					break;
+				case "ctrl+shift+space":
+					var nodeIsExpanded = node.isExpanded();
+					if (!nodeIsExpanded) {
+						node.visit(function(node){
+					        node.setExpanded(true);
+					    }, true);
+					}
+					else {
+						node.visit(function(node){
+					        node.setExpanded(false);
+					    }, true);
+					}
 					break;
 		    }
 	    }
@@ -423,7 +523,7 @@ $(document).ready(function() {
 	});
 	$("#tree").focus(function() {
   		// alert( "Handler for .focus() called." );
-  		console.log("tree focus");
+  		// console.log("tree focus");
 		var node = tree.getActiveNode();
 		activateNode(node);
 	});
@@ -461,14 +561,15 @@ $(document).ready(function() {
 			// delay the event, so the menu can close and the click event does
 			// not interfere with the edit control
 			setTimeout(function(){
-				console.log(ui.cmd);
+				// console.log(ui.cmd);
 				doCmd(ui.cmd);
 			}, 100);
 		}
 	});
+	// document.querySelector("#fileload").onchange=importFile;
 });
 
-function copyToClipboard(some_text) {
+function toSystemClipboard(some_text) {
   var $temp = $("<input>");
   $("body").append($temp);
   $temp.val(some_text).select();
@@ -556,13 +657,14 @@ function activateNode(node) {
 }
 
 function getJSON_string() {
-	return JSON.stringify(tree.toDict(true));
+	// return JSON.stringify(tree.toDict(true));
+	return JSON.stringify(tree.toDict(true, function(n){ delete n.key;}));
 }
 
 function updateLocalStorage() {
 	if (localStorageSupported) {
 	  	jsonStore = getJSON_string();
-	  	console.log(jsonStore);
+	  	// console.log(jsonStore);
 		localStorage.setItem("most_recent", jsonStore);
 	}
 }
@@ -580,14 +682,108 @@ function clearOutline() {
 }
 
 function copyJSON_toClipboard() {
-	copyToClipboard(getJSON_string());
+	toSystemClipboard(getJSON_string());
 	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
 }
 
+function makeTextFile(text) {
+	var data = new Blob([text], {type: 'text/plain'});
+
+	// If we are replacing a previously generated file we need to
+	// manually revoke the object URL to avoid memory leaks.
+	if (exportText !== null) {
+		window.URL.revokeObjectURL(exportText);
+	}
+
+	exportText = window.URL.createObjectURL(data);
+
+	return exportText;
+}
+
 function exportFile() {
-	alert("Export: Not yet...")
+	// javascript
+	// var link = document.getElementById('downloadlink');
+	// link.href = makeTextFile($("#theText").val());
+	// link.style.display = 'inline';
+
+	// jquery
+	var link = $('#downloadlink');
+	link.attr('href', makeTextFile(getJSON_string()));
+	link.css('display', 'inline')
+}
+
+function clearFile() {
+	document.querySelector('#fileload').value = "";
 }
 
 function importFile() {
-	alert("Import: Not yet...")
+		// console.log('import');
+	// var files = document.querySelector('#fileload').files;
+	var files = $('#fileload').prop('files');
+	if (files.length > 0) {
+		// console.log(files[0].name);
+		var file = files[0];
+		var reader = new FileReader();
+		reader.onload = function(event) {
+			// console.log(event.target.result);
+			// $("#theText").val(event.target.result);
+			tree.clear();
+			tree.reload(JSON.parse(event.target.result));
+		};
+		reader.readAsText(file);
+		// document.querySelector('#fileload').value = "";
+	}
 }
+
+// function importFile(files) {
+// function importFile() {
+// 	// var files = infiles.files;
+// 	// var files = document.querySelector('#fileload').files;
+// 	//!!!jquery version doesn't work: 
+// 	// var files = $("#fileload").files;
+// 	var files = $('#fileload').prop('files');
+// 	// var files = document.querySelector('#fileload').files;
+// 	// Note diff between javascript and jquery:
+// 	// console.log($("#fileload").prop('files'));
+// 	// console.log(document.querySelector('#fileload').files);
+// 	// console.log($('#importButton').val());
+// 	// console.log(document.querySelector('#importButton').value);
+// 	if (files.length > 0) {
+// 		// console.log(files[0].name);
+// 		var file = files[0];
+// 		var reader = new FileReader();
+// 		reader.onload = function(event) {
+// 			// console.log(event.target.result);
+// 			tree.clear();
+// 			tree.reload(JSON.parse(event.target.result));
+// 		};
+// 		reader.readAsText(file);
+// 	}
+// 	// so onchange will be triggered if the same file is loaded
+// 	document.querySelector('#fileload').value = "";
+// 	// $("#menu-open-file")[0].value = '';
+// }
+
+// function drop() {
+// 	e.stopPropagation();
+// 	e.preventDefault();
+// 	console.log("drop");
+// }
+
+// function dragenter(e) {
+// 	e.stopPropagation();
+// 	e.preventDefault();
+// 	console.log("dragenter");
+// }
+
+// function dragover(e) {
+// 	e.stopPropagation();
+// 	e.preventDefault();
+// 	console.log("dragover");
+// }
+
+// function ondragleave(e) {
+// 	e.stopPropagation();
+// 	e.preventDefault();
+// 	console.log("ondragleave");
+// }

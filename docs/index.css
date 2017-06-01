@@ -1,27 +1,47 @@
-#draggableSample, #droppableSample {
-	height:100px;
-	padding:0.5em;
-	width:150px;
-	border:1px solid #AAAAAA;
+/* for menus */
+.ui-menu {
+	width: 180px;
+	font-size: 63%;
+	z-index: 999;
 }
-#draggableSample {
-	background-color: silver;
-	color:#222222;
+.ui-menu kbd { /* Keyboard shortcuts for ui-contextmenu titles */
+	/*font-family: monospace;*/
+	float: right;
 }
-#droppableSample {
-	background-color: maroon;
-	color: white;
+/* custom alignment (set by 'renderColumns'' event) */
+td.alignRight {
+	text-align: right;
 }
-#droppableSample.drophover {
-	border: 1px solid green;
+td.alignCenter {
+	text-align: center;
+}
+td input[type=input] {
+	width: 40px;
 }
 
+/*Seems to obey border, but not color or background color*/
 /*span*/
-.fancytree-node:hover {
+/*span.fancytree-node:hover {*/
 	/*background: #f2f6f9 !important;*/
-	background-color: #ffffff !important;
+	/*background-color: #ffffff !important;*/
+	/*background-color: #00ff00 !important;*/
+	/*background-color: yellow !important;*/
 	/*color: #5b9bd1 !important;*/
-	color: #ffffff !important;
+	/*color: #ffffff !important;*/
+/*	color: #00ff00 !important;
+	cursor:pointer;
+	border: 0px solid green;
+}
+*/
+
+span.fancytree-node:hover {
+	/*background: #f2f6f9 !important;*/
+	/*background-color: #ffffff !important;*/
+	/*background-color: #00ff00 !important;*/
+	background-color: yellow;
+	/*color: #5b9bd1 !important;*/
+	/*color: #ffffff !important;*/
+	color: #00ff00 !important;
 	cursor:pointer;
 	border: 1px solid green;
 }
@@ -56,5 +76,23 @@ span.fancytree-icon:hover {
 }
 .fancytree-ico-e span.fancytree-icon:hover {
   background-position: -80px 16px;
+}
+*/
+/*#draggableSample, #droppableSample {
+	height:100px;
+	padding:0.5em;
+	width:150px;
+	border:1px solid #AAAAAA;
+}
+#draggableSample {
+	background-color: silver;
+	color:#222222;
+}
+#droppableSample {
+	background-color: maroon;
+	color: white;
+}
+#droppableSample.drophover {
+	border: 1px solid green;
 }
 */
