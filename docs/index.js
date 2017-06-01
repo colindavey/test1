@@ -504,7 +504,7 @@ $(document).ready(function() {
 				case "ctrl+space":
 					node.toggleExpanded();
 					break;
-				case "ctrl+shift+space":
+				case "shift+space":
 					var nodeIsExpanded = node.isExpanded();
 					if (!nodeIsExpanded) {
 						node.visit(function(node){
