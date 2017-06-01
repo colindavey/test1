@@ -35,7 +35,7 @@ var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "
 
 // handle edit commands
 function doCmd(cmd) {
-	console.log(cmd);
+	// console.log(cmd);
 	var node = tree.getActiveNode();
 	// !!!Is this if necessary? 
 	if (node) {
@@ -422,7 +422,7 @@ $(document).ready(function() {
 	    var eStr = $.ui.fancytree.eventToString(e);
 		var cmd = '';
 	    var node = tree.getActiveNode();
-	    console.log( eStr );
+	    // console.log( eStr );
 	    // try edit commands
 		cmd_el = commands.find(commands => commands.kbd === eStr);
 		if (cmd_el) {
