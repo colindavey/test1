@@ -1,0 +1,81 @@
+<html>
+	<head>
+		<title>File IO</title>
+	  	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+	</head>
+	<body>
+		<div id="fileButtons">
+			<input type="button" value="Clear" id="clearButton" onclick="clearText()">
+			<input type="file" id="fileload" onchange="importFile()" onclick="clearFile()" ondrop="clearFile()"><br>
+			<input type="button" value="Clipboard" id="clipboardButton" onclick="copyToClipboard()">
+			<input type="button" value="Export" id="exportButton" onclick="exportFile()">
+			<a download="outline.txt" id="downloadlink" style="display: none">Download</a>
+		</div>
+		<div id="editor">
+			<!-- <input type="text" id="theText"> -->
+			<textarea id="theText"></textarea>
+		</div>
+	</body>
+  	<script>
+		var exportText = null;
+		function clearText() {
+			$("#theText").val("");
+		}
+
+		function clearFile() {
+			document.querySelector('#fileload').value = "";
+		}
+
+  		function importFile() {
+  			// console.log('import');
+			// var files = document.querySelector('#fileload').files;
+			var files = $('#fileload').prop('files');
+			if (files.length > 0) {
+				// console.log(files[0].name);
+				var file = files[0];
+				var reader = new FileReader();
+				reader.onload = function(event) {
+					// console.log(event.target.result);
+					$("#theText").val(event.target.result);
+				};
+				reader.readAsText(file);
+				// document.querySelector('#fileload').value = "";
+			}
+  		}
+
+  		function copyToClipboard() {
+			var $temp = $("<input>");
+			$("body").append($temp);
+			$temp.val($("#theText").val()).select();
+			document.execCommand("copy");
+			$temp.remove();
+  		}
+
+		function makeTextFile(text) {
+			var data = new Blob([text], {type: 'text/plain'});
+
+			// If we are replacing a previously generated file we need to
+			// manually revoke the object URL to avoid memory leaks.
+			if (exportText !== null) {
+				window.URL.revokeObjectURL(exportText);
+			}
+
+			exportText = window.URL.createObjectURL(data);
+
+			return exportText;
+		}
+
+		function exportFile() {
+			// javascript
+			// var link = document.getElementById('downloadlink');
+			// link.href = makeTextFile($("#theText").val());
+			// link.style.display = 'inline';
+
+			// jquery
+			var link = $('#downloadlink');
+			link.attr('href', makeTextFile($("#theText").val()));
+			// link['style.display'] = 'inline';
+			link.css('display', 'inline')
+		}
+  	</script>
+</html>
