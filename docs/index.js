@@ -15,9 +15,9 @@ var commands = [
 	{cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "ctrl+shift+return"}, 
 	{cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "ctrl+return"}, 
 	{cmd: "delete", buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
-	{cmd: "cut", buttonLabel:"", menuLabel:"Cut", kbd: "ctr+x"},
-	{cmd: "copy", buttonLabel:"", menuLabel:"Copy", kbd: "ctr+c"},
-	{cmd: "paste", buttonLabel:"", menuLabel:"Paste", kbd: "ctr+v"},
+	{cmd: "cut", buttonLabel:"", menuLabel:"Cut", kbd: "ctrl+x"},
+	{cmd: "copy", buttonLabel:"", menuLabel:"Copy", kbd: "ctrl+c"},
+	{cmd: "paste", buttonLabel:"", menuLabel:"Paste", kbd: "ctrl+v"},
 	{cmd: "pasteAbove", buttonLabel:"", menuLabel:"Paste Above", kbd: ""},
 	{cmd: "pasteFirstChild", buttonLabel:"", menuLabel:"Paste First Child", kbd: ""},
 	{cmd: "pasteLastChild", buttonLabel:"", menuLabel:"Paste Last Child", kbd: ""},
@@ -37,6 +37,7 @@ var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "
 function doCmd(cmd) {
 	// console.log(cmd);
 	var node = tree.getActiveNode();
+	var nodes = tree.getSelectedNodes();
 	// !!!Is this if necessary? 
 	if (node) {
 		switch (cmd) {
@@ -79,19 +80,21 @@ function doCmd(cmd) {
 		        node = removeNode(node);
 				break;
 			case "cut":
-				toClipboard(node);
+				toClipboard(nodes);
 		        node = removeNode(node);
 				break;
 			case "copy":
-				toClipboard(node);
+				toClipboard(nodes);
 				break;
+			// second param of addChildren is node to paste before
 			case "paste":
 				// node = node.addChildren(clipboard);
+				// node = node.getParent().addChildren(clipboard, node.getNextSibling());
 				node = node.addNode(clipboard, 'after');
 				break;
-
 			case "pasteAbove":
-				node = node.addNode(clipboard, 'before');
+				// node = node.addNode(clipboard, 'before');
+				node = node.getParent().addChildren(clipboard, node);
 				break;
 			case "pasteFirstChild":
 				if (!node.hasChildren()) {
@@ -102,6 +105,7 @@ function doCmd(cmd) {
 				}
 				break;
 			case "pasteLastChild":
+				// node = node.getParent().addChildren(clipboard);
 				node = node.addNode(clipboard, 'child');
 				break;
 
@@ -163,6 +167,7 @@ function can(cmd, node) {
 		case "addAbove":
 		case "addFirstChild":
 		case "addLastChild":
+		case "cut":
 		case "delete":
 			ret_val = isTitle(node);
 			break;
@@ -187,10 +192,28 @@ function can(cmd, node) {
 	return !ret_val;
 }
 
-function toClipboard(node) {
-	clipboard = node.toDict(function(n){
-		delete n.key;
-	});
+function toClipboard(nodes) {
+	// console.log(node.icon)
+	clipboard = [];
+	for (var i = 0; i < nodes.length; i++) {
+		var newNode = nodes[i];
+		newNode.icon = false;
+		delete newNode.key;
+		clipboard[i] = newNode.toDict(
+				true,
+				// !!!haven't seen this run w breakpoints
+				// is it necessary? 
+				// should I say true for recursive? 
+				// remove entirely? 
+				// what exactly is effect of deleting key? 
+				function(n){
+					// console.log(n.icon)
+					delete n.key;
+					// console.log(n.icon)
+				}
+			)
+		;
+	}
 }
 
 function removeNode(node) {
@@ -203,21 +226,6 @@ function removeNode(node) {
 	}
     node.remove();
     return nextNodeToActivate;
-}
-
-function toSystemClipboard(some_text) {
-  var $temp = $("<input>");
-  $("body").append($temp);
-  $temp.val(some_text).select();
-  document.execCommand("copy");
-  $temp.remove();
-}
-
-function setupNewTree() {
-	var titleNode = getTitleNode();
-	// titleNode.setActive();
-	activateNode(titleNode);
-	titleNode.editStart();
 }
 
 function getTitleNode() {
@@ -292,64 +300,8 @@ function activateNode(node) {
 	$("#tree").focus();
 }
 
-function getJSON_string() {
-	// return JSON.stringify(tree.toDict(true));
-	return JSON.stringify(tree.toDict(true, function(n){ delete n.key;}));
-}
-
-function updateLocalStorage() {
-	if (localStorageSupported) {
-	  	jsonStore = getJSON_string();
-	  	// console.log(jsonStore);
-		localStorage.setItem("most_recent", jsonStore);
-	}
-}
-
 function onOutlineChange() {
 	updateLocalStorage();
-}
-
-function clearOutline() {
-	tree.clear();
-	jsonStore = makeEmptyOutline();
-	tree.reload(jsonStore);
-	setupNewTree();
-	onOutlineChange();
-}
-
-function copyJSON_toClipboard() {
-	toSystemClipboard(getJSON_string());
-	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
-}
-
-function makeTextFile(text) {
-	var data = new Blob([text], {type: 'text/plain'});
-
-	// If we are replacing a previously generated file we need to
-	// manually revoke the object URL to avoid memory leaks.
-	if (exportText !== null) {
-		window.URL.revokeObjectURL(exportText);
-	}
-
-	exportText = window.URL.createObjectURL(data);
-
-	return exportText;
-}
-
-function exportFile() {
-	// javascript
-	// var link = document.getElementById('downloadlink');
-	// link.href = makeTextFile($("#theText").val());
-	// link.style.display = 'inline';
-
-	// jquery
-	var link = $('#downloadlink');
-	link.attr('href', makeTextFile(getJSON_string()));
-	link.css('display', 'inline')
-}
-
-function clearFile() {
-	document.querySelector('#fileload').value = "";
 }
 
 function compareNodes(node1, node2) {
@@ -413,12 +365,95 @@ function getBetweenNodes(inNode1, inNode2) {
 	return ret_nodes;
 }
 
+// given a list of nodes, return a list with nodes removed that are descendants of any other node in the list. 
+// used for operations on multiple selections. 
+function getUniqueAncestors(nodes) {
+	var ret_nodes = nodes;
+	var ind1 = 0;
+	var ind2;
+	// only go till next to last one
+	while (ind1 < ret_nodes.length-1) {
+		ind2 = ind1 + 1;
+		while (ret_nodes[ind2].isDescendantOf(ret_nodes[ind1])) {
+			ret_nodes.splice([ind2], 1);
+			if (ind2 >= ret_nodes.length) {
+				break;
+			}
+		}
+		ind1++;
+	}
+	return ret_nodes;
+}
+
+// let's assume that there is more than one node. 
+function areContiguousSiblings(nodes) {
+	var ret_val = true;
+	// only go till next to last one
+	for (var i = 0; i < ret_nodes.length-1; i++) {
+		if (nodes[i+1] !== getNextSibling(nodes[i])) {
+			ret_val = false;
+			break;
+		}
+	}
+	return ret_val;
+}
+
 function selectNodesAll(val) {
 	var selNodes = tree.getSelectedNodes();
 	for (var aNode in selNodes) {
 		selNodes[aNode].setSelected(val);
 		// console.log("unselecting: ", selNodes[aNode].title);
 	}
+}
+
+// File IO functions
+
+function getJSON_string() {
+	// return JSON.stringify(tree.toDict(true));
+	return JSON.stringify(tree.toDict(true, function(n){ delete n.key;}));
+}
+
+function updateLocalStorage() {
+	if (localStorageSupported) {
+	  	jsonStore = getJSON_string();
+	  	// console.log(jsonStore);
+		localStorage.setItem("most_recent", jsonStore);
+	}
+}
+
+function toSystemClipboard(some_text) {
+  var $temp = $("<input>");
+  $("body").append($temp);
+  $temp.val(some_text).select();
+  document.execCommand("copy");
+  $temp.remove();
+}
+
+function makeTextFile(text) {
+	var data = new Blob([text], {type: 'text/plain'});
+
+	// If we are replacing a previously generated file we need to
+	// manually revoke the object URL to avoid memory leaks.
+	if (exportText !== null) {
+		window.URL.revokeObjectURL(exportText);
+	}
+
+	exportText = window.URL.createObjectURL(data);
+
+	return exportText;
+}
+
+function setupNewTree() {
+	var titleNode = getTitleNode();
+	// titleNode.setActive();
+	activateNode(titleNode);
+	titleNode.editStart();
+}
+
+// File IO called directly from UI
+
+function clearFileName() {
+	document.querySelector('#fileload').value = "";
 }
 
 function importFile() {
@@ -434,12 +469,45 @@ function importFile() {
 			// $("#theText").val(event.target.result);
 			tree.clear();
 			tree.reload(JSON.parse(event.target.result));
+			onOutlineChange();
 		};
 		reader.readAsText(file);
 		// document.querySelector('#fileload').value = "";
 	}
 }
 
+function exportFile() {
+	// javascript
+	// var link = document.getElementById('downloadlink');
+	// link.href = makeTextFile($("#theText").val());
+	// link.style.display = 'inline';
+
+	// jquery
+	var link = $('#downloadlink');
+	link.attr('href', makeTextFile(getJSON_string()));
+	link.css('display', 'inline')
+}
+
+function copyJSON_toClipboard() {
+	// toSystemClipboard(getJSON_string());
+	// alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
+	console.log('***debug')
+	var selNodes = tree.getSelectedNodes();
+	var selNodes2 = getUniqueAncestors(selNodes);
+	for (var i = 0; i < selNodes2.length; i++) {
+		console.log(selNodes2[i].title);
+	}
+}
+
+function clearOutline() {
+	tree.clear();
+	jsonStore = makeEmptyOutline();
+	tree.reload(jsonStore);
+	setupNewTree();
+	onOutlineChange();
+}
+
+// Init function
 $(document).ready(function() {
 	var cmd;
 	var newBut;
@@ -520,6 +588,7 @@ $(document).ready(function() {
 		// 	}
 		// ],
 	 	//  1 - Single select. 2 - Multi select. 3 - Hierarchical multi select.
+		// selectMode :2,
 		selectMode :2,
 		// forces change of focus to cause change of activation, loosing distinction between focused and active. 
 		autoActivate: true,
@@ -548,12 +617,23 @@ $(document).ready(function() {
 			// Available options with their default:
 			adjustWidthOfs: 4,   // null: don't adjust input size to content
 			inputCss: { minWidth: "3em" },
-			// triggerStart: ["f2", "dblclick", "shift+click"],
+
+			// need exactly this one for ability to capture keydown for <return>
+			triggerStart: ["f2", "dblclick", "shift+click"],
+			// These don't work re ability to capture keydown for <return>
+			// triggerStart: ["f2", "dblclick"],
+			// triggerStart: ["f2", "shift+click"],
+			// triggerStart: ["dblclick", "shift+click"],
+			// triggerStart: ["f2"],
 			// triggerStart: ["f2", "dblclick", "shift+click", "mac+enter"],
-			// f3 and space don't work
+			// f3 and space don't work, as in don't trigger the edit
 			// triggerStart: ["f3", "dblclick", "shift+click", "space"],
+
 			beforeEdit: $.noop,  // Return false to prevent edit mode
 			// edit: $.noop,        // Editor was opened (available as data.input)
+			// beforeEdit: function(event, data){
+			// 	return false;
+			// },
 			edit: function(event, data){
 					// Editor was opened (available as data.input)
 			},
@@ -611,8 +691,9 @@ $(document).ready(function() {
 			}
 		},
 		beforeActivate: function(event, data) {
+			// is this if necessary
 			if (tree) {
-				console.log('beforeActivate: ' + tree.getActiveNode().title + " " + data.node.title);
+				console.log('beforeActivate: ' + (tree.getActiveNode() ? tree.getActiveNode().title : "NO ACTIVE") + " " + data.node.title);
 				selectNodesAll(false);
 				console.log(event);
 			}
@@ -732,7 +813,7 @@ $(document).ready(function() {
 	    var eStr = $.ui.fancytree.eventToString(e);
 		var cmd = '';
 	    var node = tree.getActiveNode();
-	    // console.log( eStr );
+	    console.log( eStr );
 	    // try edit commands
 		cmd_el = commands.find(commands => commands.kbd === eStr);
 		if (cmd_el) {
