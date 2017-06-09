@@ -2,12 +2,13 @@
 .ui-menu {
 	width: 180px;
 	font-size: 63%;
-	z-index: 999;
+	z-index: 10000;
 }
 .ui-menu kbd { /* Keyboard shortcuts for ui-contextmenu titles */
 	/*font-family: monospace;*/
 	float: right;
 }
+
 /* custom alignment (set by 'renderColumns'' event) */
 td.alignRight {
 	text-align: right;
@@ -34,20 +35,64 @@ td input[type=input] {
 }
 */
 
-span.fancytree-node:hover {
+/*span.fancytree-node */
+	/*background: #f2f6f9 !important;*/
+/*	background: #FF0000 !important;
+	color: #00ff00 !important;
+	cursor:pointer;
+	border: 10px solid red;
+*/	/*border: none; 3px solid red;*/
+	/*border: 3px solid red;*/
+/*span.fancytree-active */
+
+span.fancytree-selected span.fancytree-title {
+	background: #b0cdfc !important;
+	/*border: 1px solid;*/
+	border: none;
+}
+
+/*span.fancytree-node  */
+	/*background: #f2f6f9 !important;*/
+/*span.fancytree-active span.fancytree-title {
+}
+*/
+/*span.fancytree-node*/
+/*span.fancytree-selected */
+/*	background: white !important;
+	color: #ff0000 !important;
+	cursor:pointer;
+*/	/*border: none; 3px solid red;*/
+	/*background: #FF0000 !important;*/
+	/*color: #00ff00 !important;*/
+	/*cursor:pointer;*/
+
+span.fancytree-active span.fancytree-title {
+	background: #6ca1f7 !important;
+	/*border: 1px solid;*/
+	border: none;
+}
+
 	/*background: #f2f6f9 !important;*/
 	/*background-color: #ffffff !important;*/
 	/*background-color: #00ff00 !important;*/
-	background-color: yellow;
+	/*background-color: yellow;*/
 	/*color: #5b9bd1 !important;*/
 	/*color: #ffffff !important;*/
-	color: #00ff00 !important;
+/*	background: white !important;
+	color: #ff0000 !important;
 	cursor:pointer;
-	border: 1px solid green;
+	border: 1px solid red;*/
+	/*background: none !important;*/
+	/*opacity: 1 !important;*/
+
+span.fancytree-node:hover span.fancytree-title {
+	border: none;
+	color: #444444 !important;
 }
 
+
 /*span*/
-span.fancytree-icon {
+/*span.fancytree-icon {
   margin-left: 3px;
   background-position: 0px 0px;
 }
@@ -55,9 +100,9 @@ span.fancytree-icon {
 span.fancytree-icon:hover {
   margin-left: 3px;
   /*background-position: 0px 0px;*/
-  background-position: -48px 0px;
+/*  background-position: -48px 0px;
 }
-
+*/
 /*.fancytree-ico-cf span.fancytree-icon {
   background-position: 0px -16px;
 }
@@ -95,4 +140,3 @@ span.fancytree-icon:hover {
 #droppableSample.drophover {
 	border: 1px solid green;
 }
-*/

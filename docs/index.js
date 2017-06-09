@@ -15,9 +15,9 @@ var commands = [
 	{cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "ctrl+shift+return"}, 
 	{cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "ctrl+return"}, 
 	{cmd: "delete", buttonLabel:"-", menuLabel:"Delete", kbd: "del"},
-	{cmd: "cut", buttonLabel:"", menuLabel:"Cut", kbd: "ctrl+x"},
-	{cmd: "copy", buttonLabel:"", menuLabel:"Copy", kbd: "ctrl+c"},
-	{cmd: "paste", buttonLabel:"", menuLabel:"Paste", kbd: "ctrl+v"},
+	{cmd: "cut", buttonLabel:"^x", menuLabel:"Cut", kbd: "ctrl+x"},
+	{cmd: "copy", buttonLabel:"^c", menuLabel:"Copy", kbd: "ctrl+c"},
+	{cmd: "paste", buttonLabel:"^v", menuLabel:"Paste", kbd: "ctrl+v"},
 	{cmd: "pasteAbove", buttonLabel:"", menuLabel:"Paste Above", kbd: ""},
 	{cmd: "pasteFirstChild", buttonLabel:"", menuLabel:"Paste First Child", kbd: ""},
 	{cmd: "pasteLastChild", buttonLabel:"", menuLabel:"Paste Last Child", kbd: ""},
@@ -30,14 +30,25 @@ var commands = [
 	{cmd: "moveUp", buttonLabel: "^", menuLabel: "Move Up", kbd: "ctrl+k"},
 	{cmd: "moveDown", buttonLabel: "v", menuLabel: "Move Down", kbd: "ctrl+j"}
 ];
-var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown"];
+var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown", "copy", "cut", "paste"];
 var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "----", "cut", "copy", "paste", "pasteAbove", "pasteFirstChild", "pasteLastChild", "----", "promote", "promoteAbove", "demote", "demoteFirstChild", "----", "moveUp", "moveDown"];
 
 // handle edit commands
 function doCmd(cmd) {
 	// console.log(cmd);
 	var node = tree.getActiveNode();
+	// var nodes = tree.getSelectedNodes();
+
 	var nodes = tree.getSelectedNodes();
+	var activeNodeInd;
+	for (activeNodeInd in nodes) {
+		if (nodes[activeNodeInd].isActive()) {
+			break;
+		}
+	}
+	nodes = getUniqueAncestors(nodes);
+
+	var tmpClipboard = null;
 	// !!!Is this if necessary? 
 	if (node) {
 		switch (cmd) {
@@ -77,78 +88,120 @@ function doCmd(cmd) {
 				// 	nextNodeToActivate = node.getParent();
 				// }
 		  //       node.remove();
-		        node = removeNode(node);
+		        node = removeNodes(nodes);
 				break;
 			case "cut":
-				toClipboard(nodes);
-		        node = removeNode(node);
+				clipboard = makeClipboard(nodes);
+		        node = removeNodes(nodes);
 				break;
 			case "copy":
-				toClipboard(nodes);
+				clipboard = makeClipboard(nodes);
 				break;
 			// second param of addChildren is node to paste before
 			case "paste":
 				// node = node.addChildren(clipboard);
 				// node = node.getParent().addChildren(clipboard, node.getNextSibling());
-				node = node.addNode(clipboard, 'after');
+				// node = node.addNode(clipboard, 'after');
+				node = insertNodes(nodes[nodes.length-1], 'after', clipboard);
 				break;
 			case "pasteAbove":
+				// node = node.getParent().addChildren(clipboard, node);
 				// node = node.addNode(clipboard, 'before');
-				node = node.getParent().addChildren(clipboard, node);
+				node = insertNodes(node, 'before', clipboard);
 				break;
 			case "pasteFirstChild":
 				if (!node.hasChildren()) {
-					node = node.addNode(clipboard, 'child');
+					// node = node.addNode(clipboard, 'child');
+					node = insertNodes(node, 'child', clipboard);
 				}
 				else {
-					node = node.getFirstChild().addNode(clipboard, "before");
+					// node = node.getFirstChild().addNode(clipboard, "before");
+					node = insertNodes(node.getFirstChild(), 'before', clipboard);
 				}
 				break;
 			case "pasteLastChild":
 				// node = node.getParent().addChildren(clipboard);
-				node = node.addNode(clipboard, 'child');
+				// node = node.addNode(clipboard, 'child');
+				node = insertNodes(node, 'child', clipboard);
 				break;
 
 			case "promote":
-				var newSibling = node.getParent();
-				node.moveTo(newSibling, 'after');
+				// var newSibling = node.getParent();
+				var newSibling = nodes[0].getParent();
+				// node.moveTo(newSibling, 'after');
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
+				// node = newPrevSibling.addNode(tmpClipboard, 'after');
+				node = insertNodes(newSibling, 'after', tmpClipboard, activeNodeInd);
 				break;
 			case "promoteAbove":
-				var newSibling = node.getParent();
-				node.moveTo(newSibling, 'before');
+				var newSibling = nodes[0].getParent();
+				// node.moveTo(newSibling, 'before');
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
+				node = insertNodes(newSibling, 'before', tmpClipboard, activeNodeInd);
 				break;
 			case "demote":
-				var newParent = node.getPrevSibling();
-				node.moveTo(newParent, 'child');
+				// var newParent = node.getPrevSibling();
+				var newParent = nodes[0].getPrevSibling();
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
+				// node.moveTo(newParent, 'child');
+				node = insertNodes(newParent, 'child', tmpClipboard, activeNodeInd);
 				// necessary because fancy wants to collapse node after giving it a child. 
 				newParent.setExpanded(true);
 				break;
 			case "demoteFirstChild":
-				var newParent = node.getPrevSibling();
+				var newParent = nodes[0].getPrevSibling();
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
 				if (newParent.hasChildren()) {
 					var newAfterNode = newParent.getFirstChild();
-					node.moveTo(newAfterNode, 'before');
+					// node.moveTo(newAfterNode, 'before');
+					node = insertNodes(newAfterNode, 'before', tmpClipboard, activeNodeInd);
 				}
 				else {
-					node.moveTo(newParent, 'child');
+					// node.moveTo(newParent, 'child');
+					node = insertNodes(newParent, 'child', tmpClipboard, activeNodeInd);
 				}
 				// necessary because fancy wants to collapse node after giving it a child. 
 				newParent.setExpanded(true);
 				break;
 			case "moveUp":
-				var newNextSibling = node.getPrevSibling();
-				node.moveTo(newNextSibling, 'before');
+				// Single node version
+				// var newNextSibling = node.getPrevSibling();
+				// node.moveTo(newNextSibling, 'before');
+//				// nodes.moveTo(newNextSibling, 'before');
+
+				var newNextSibling = nodes[0].getPrevSibling();
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
+				// node = newNextSibling.addNode(tmpClipboard, 'before');
+				node = insertNodes(newNextSibling, 'before', tmpClipboard, activeNodeInd);
+				// !!!need to select the moved nodes after
 				break;
 			case "moveDown":
-				var newPrevSibling = node.getNextSibling();
-				node.moveTo(newPrevSibling, 'after');
+				// Single node version
+				// var newPrevSibling = node.getNextSibling();
+				// node.moveTo(newPrevSibling, 'after');
+//				// nodes.moveTo(newPrevSibling, 'after');
+
+				var newPrevSibling = nodes[nodes.length-1].getNextSibling();
+				tmpClipboard = makeClipboard(nodes);
+		        removeNodes(nodes);
+				// node = newPrevSibling.addNode(tmpClipboard, 'after');
+				node = insertNodes(newPrevSibling, 'after', tmpClipboard, activeNodeInd);
+				// !!!need to select the moved nodes after
+				// !!!need the can routine to look at the last node
 				break;
 		}
-		if (cmd !== 'add' && cmd !== 'addAbove' && cmd !== 'addFirstChild' && cmd !== 'addLastChild') {
-			activateNode(node);
-			onOutlineChange();
-		} else {
+		// double check logic below here. 
+		onOutlineChange();
+		if (cmd === 'add' || cmd === 'addAbove' || cmd === 'addFirstChild' || cmd === 'addLastChild') {
 			return false;
+		} else {
+			activateNode(node);
+			return true;
 		}
 	}
 }
@@ -192,14 +245,69 @@ function can(cmd, node) {
 	return !ret_val;
 }
 
-function toClipboard(nodes) {
+function insertNodes(nodeIn, mode, clipboardIn, activeNum=0) {
+	var nodeOut;
+	var nextNode;
+	var firstNode = nodeIn.addNode(clipboardIn, mode);
+
+	nextNode = firstNode;
+	for (var i = 0; i < activeNum; i++) {
+		// nextNode = nextNode.getNextSibling();
+		nextNode = getNextNode(nextNode);
+	}
+	nodeOut = nextNode;
+	// nodeOut.setActive();
+	activateNode(nodeOut);
+
+	nextNode = firstNode;
+	for (var i = 0; i < clipboardIn.length; i++) {
+		nextNode.setSelected();
+		nextNode = nextNode.getNextSibling();
+	}
+
+	return nodeOut;
+}
+
+function removeNodes(nodes) {
+	// var nextNodeToActivate = nodes[0].getNextSibling();
+	var nextNodeToActivate = nodes[nodes.length-1].getNextSibling();
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = nodes[0].getPrevSibling();
+	}
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = nodes[0].getParent();
+	}
+	for (var nodeInd in nodes) {
+	    nodes[nodeInd].remove();
+	}
+    return nextNodeToActivate;
+}
+
+function removeNode(node) {
+	var nextNodeToActivate = node.getNextSibling();
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = node.getPrevSibling();
+	}
+	if (nextNodeToActivate === null) {
+		nextNodeToActivate = node.getParent();
+	}
+    node.remove();
+    return nextNodeToActivate;
+}
+
+function makeClipboard(nodes) {
 	// console.log(node.icon)
-	clipboard = [];
+	var localClipboard = [];
+	var newNode;
+	// var active = 0;
 	for (var i = 0; i < nodes.length; i++) {
-		var newNode = nodes[i];
+		newNode = nodes[i];
+		// if (newNode.isActive()) {
+		// 	active = i;
+		// }
 		newNode.icon = false;
 		delete newNode.key;
-		clipboard[i] = newNode.toDict(
+		localClipboard[i] = newNode.toDict(
 				true,
 				// !!!haven't seen this run w breakpoints
 				// is it necessary? 
@@ -214,18 +322,7 @@ function toClipboard(nodes) {
 			)
 		;
 	}
-}
-
-function removeNode(node) {
-	var nextNodeToActivate = node.getNextSibling();
-	if (nextNodeToActivate === null) {
-		nextNodeToActivate = node.getPrevSibling();
-	}
-	if (nextNodeToActivate === null) {
-		nextNodeToActivate = node.getParent();
-	}
-    node.remove();
-    return nextNodeToActivate;
+	return localClipboard;
 }
 
 function getTitleNode() {
@@ -321,6 +418,23 @@ function compareNodes(node1, node2) {
 	return (level1 < level2 ? 1 : 2);
 }
 
+function getPrevNode(node) {
+	// from KC.UP handler
+	var sib;
+	sib = node.getPrevSibling();
+	// #359: skip hidden sibling nodes, preventing a _goto() recursion
+	while( sib && !$(sib.span).is(":visible") ) {
+		sib = sib.getPrevSibling();
+	}
+	while( sib && sib.expanded && sib.children && sib.children.length ) {
+		sib = sib.children[sib.children.length - 1];
+	}
+	if( !sib && node.parent && node.parent.parent ){
+		sib = node.parent;
+	}
+	return sib;
+}
+
 function getNextNode(node) {
 	// from KC.DOWN handler
 	var sib;
@@ -338,6 +452,54 @@ function getNextNode(node) {
 		}
 	}
 	return sib;
+}
+
+function selectContigNodes(activeNode, endNode) {
+	selectNodesAll(false);
+	var betweenNodes = getBetweenNodes(activeNode, endNode);
+	for (var tmpNode in betweenNodes) {
+		console.log(betweenNodes[tmpNode].title);
+		betweenNodes[tmpNode].setSelected(true);
+	}
+}
+
+// Return the contiguous selected node that is farthest from the active node. 
+// Compare the number of contiguous selected above the active node to the number below. 
+function findContigSelectionBound(biasDown) {
+	var activeNode = tree.getActiveNode();
+
+	// find upper bound
+	var numPrev = 0;
+	var firstNode = activeNode;
+	while (firstNode && getPrevNode(firstNode) && getPrevNode(firstNode).isSelected()) {
+		numPrev++;
+		firstNode = getPrevNode(firstNode);
+	}
+
+	// find lower bound
+	var numNext = 0;
+	var lastNode = activeNode;
+	while (lastNode && getNextNode(lastNode) && getNextNode(lastNode).isSelected()) {
+		numNext++;
+		lastNode = getNextNode(lastNode);
+	}
+
+	if (numPrev === numNext) {
+		if (biasDown) {
+			return(lastNode);
+		}
+		else {
+			return firstNode;
+		}
+	}
+	else {
+		if (numNext > numPrev) {
+			return lastNode;
+		}
+		else {
+			return firstNode;
+		}
+	}
 }
 
 function getBetweenNodes(inNode1, inNode2) {
@@ -708,6 +870,7 @@ $(document).ready(function() {
 			console.log(node.getIndexHier());
 			console.log(node.getKeyPath());
 			console.log(node.getParentList());
+			console.log(node.title);
 			// console.log("index " + node);
 			// console.log("index " + node.getIndex());
 			// console.log("index"); //" + node.getIndex());
@@ -753,12 +916,7 @@ $(document).ready(function() {
 				return true;
 			}
 			else if (event.shiftKey) {
-				selectNodesAll(false);
-				var betweenNodes = getBetweenNodes(activeNode, clickedNode);
-				for (var tmpNode in betweenNodes) {
-					console.log(betweenNodes[tmpNode].title);
-					betweenNodes[tmpNode].setSelected(true);
-				}
+				selectContigNodes(activeNode, clickedNode);
 				return false;
 			}
 			else if (event.metaKey) {
@@ -912,6 +1070,26 @@ $(document).ready(function() {
 					        node.setExpanded(false);
 					    }, true);
 					}
+					break;
+				case "shift+up":
+					var movingNode = findContigSelectionBound();
+					var newNode = getPrevNode(movingNode);
+					if (newNode) {
+						console.log(movingNode.title + ":" + newNode.title);
+						selectContigNodes(node, newNode);
+					}
+					return false;
+					// node.navigate(KC.UP, true);
+					break;
+				case "shift+down":
+					var movingNode = findContigSelectionBound();
+					var newNode = getNextNode(movingNode);
+					if (newNode) {
+						console.log(movingNode.title + ":" + newNode.title);
+						selectContigNodes(node, newNode);
+					}
+					return false;
+					// node.navigate(KC.DOWN, true);
 					break;
 		    }
 	    }
