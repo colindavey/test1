@@ -5,10 +5,6 @@ var clipboard = null;
 var exportText = null;
 
 var commands = [
-	// {cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "ctrl+o"}, 
-	// {cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "ctrl+shift+o"}, 
-	// {cmd: "addFirstChild", buttonLabel: "+\\", menuLabel: "Add First Child", kbd: "alt+ctrl+o"}, 
-	// {cmd: "addLastChild", buttonLabel: "+\\^", menuLabel: "Add Last Child", kbd: "alt+ctrl+shift+o"}, 
 	{cmd: "editStart", buttonLabel: "", menuLabel: "", kbd: "space"}, 
 	{cmd: "add", buttonLabel: "+", menuLabel: "Add", kbd: "return"},
 	{cmd: "addAbove", buttonLabel: "+^", menuLabel: "Add Above", kbd: "shift+return"}, 
@@ -32,13 +28,23 @@ var commands = [
 ];
 var buttons = ["add", "delete", "promote", "demote", "moveUp", "moveDown", "copy", "cut", "paste"];
 var menuItems = ["add", "addAbove", "addFirstChild", "addLastChild", "delete", "----", "cut", "copy", "paste", "pasteAbove", "pasteFirstChild", "pasteLastChild", "----", "promote", "promoteAbove", "demote", "demoteFirstChild", "----", "moveUp", "moveDown"];
+var navCommands = [
+	{cmd: "navDown", kbd: "j"}, 
+	{cmd: "navJumpDown", kbd: "shift+j"}, 
+	{cmd: "navUp", kbd: "k"}, 
+	{cmd: "navJumpUp", kbd: "shift+k"}, 
+	{cmd: "navExpand", kbd: "shift+right"}, 
+	{cmd: "navCollapse", kbd: "shift+left"}, 
+	{cmd: "navToggleExpanded", kbd: "ctrl+space"}, 
+	{cmd: "navToggleExpandedAll", kbd: "shift+space"}, 
+	{cmd: "navExtendSelUp", kbd: "shift+up"}, 
+	{cmd: "navExtendSelDown", kbd: "shift+down"}
+];
 
 // handle edit commands
 function doCmd(cmd) {
 	// console.log(cmd);
 	var node = tree.getActiveNode();
-	// var nodes = tree.getSelectedNodes();
-
 	var nodes = tree.getSelectedNodes();
 	var activeNodeInd;
 	for (activeNodeInd in nodes) {
@@ -50,7 +56,7 @@ function doCmd(cmd) {
 
 	var tmpClipboard = null;
 	// !!!Is this if necessary? 
-	if (node) {
+	// if (node) {
 		switch (cmd) {
 			case "editStart":
 				node.editStart();
@@ -58,12 +64,6 @@ function doCmd(cmd) {
 			case "add":
 				// node.editStart();
 				node.editCreateNode("after", makeNodeItem(""));
-				// var newData = makeNodeItem("");
-				// var newSibling = node.appendSibling(newData);
-				// // newSibling.setActive();
-				// activateNode(newSibling);
-				// newSibling.editStart();
-				// onOutlineChange();
 				break;
 			case "addAbove":
 				node.editCreateNode("before", makeNodeItem(""));
@@ -80,14 +80,6 @@ function doCmd(cmd) {
 				node.editCreateNode("child", makeNodeItem(""));
 				break;
 			case "delete":
-				// var nextNodeToActivate = node.getNextSibling();
-				// if (nextNodeToActivate === null) {
-				// 	nextNodeToActivate = node.getPrevSibling();
-				// }
-				// if (nextNodeToActivate === null) {
-				// 	nextNodeToActivate = node.getParent();
-				// }
-		  //       node.remove();
 		        node = removeNodes(nodes);
 				break;
 			case "cut":
@@ -178,7 +170,6 @@ function doCmd(cmd) {
 		        removeNodes(nodes);
 				// node = newNextSibling.addNode(tmpClipboard, 'before');
 				node = insertNodes(newNextSibling, 'before', tmpClipboard, activeNodeInd);
-				// !!!need to select the moved nodes after
 				break;
 			case "moveDown":
 				// Single node version
@@ -191,8 +182,6 @@ function doCmd(cmd) {
 		        removeNodes(nodes);
 				// node = newPrevSibling.addNode(tmpClipboard, 'after');
 				node = insertNodes(newPrevSibling, 'after', tmpClipboard, activeNodeInd);
-				// !!!need to select the moved nodes after
-				// !!!need the can routine to look at the last node
 				break;
 		}
 		// double check logic below here. 
@@ -200,14 +189,136 @@ function doCmd(cmd) {
 		if (cmd === 'add' || cmd === 'addAbove' || cmd === 'addFirstChild' || cmd === 'addLastChild') {
 			return false;
 		} else {
-			activateNode(node);
+			// activateNode(node);
 			return true;
 		}
+	// }
+}
+
+function doNavCmd(cmd) {
+    var node = tree.getActiveNode();
+	var nextNode = null;
+	var KC = $.ui.keyCode;
+    switch( cmd ) {
+    // switch( eStr ) {
+    	// down to next line
+		// case "j":
+		case "navDown":
+			node.navigate(KC.DOWN, true);
+			break;
+    	// jump down:
+    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
+    	// otherwise, jump to last sibling (parent's last child)
+    	// otherwise, treat like normal down nav. 
+		// case "shift+down":
+		// case "shift+j":
+		case "navJumpDown":
+			if (node.hasChildren() && node.isExpanded()) {
+				nextNode = node.getNextSibling();
+			} 
+			else {
+				nextNode = node.getParent().getLastChild();
+				if (nextNode === node) {
+					nextNode = null;
+				}
+			}
+			if (nextNode) {
+				activateNode(nextNode);
+			}
+			else {
+				node.navigate(KC.DOWN, true);
+			}
+			break;
+    	// up to next line
+		// case "k":
+		case "navUp":
+			node.navigate(KC.UP, true);
+			break;
+    	// jump up:
+    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
+    	// otherwise, jump to first sibling (parent's first child)
+    	// otherwise, treat like normal down nav. 
+		// case "shift+up":
+		// case "shift+k":
+		case "navJumpUp":
+			var prevSibNode = node.getPrevSibling();
+			if (prevSibNode !== null) {
+				if (prevSibNode.hasChildren() && prevSibNode.isExpanded()) {
+					nextNode = prevSibNode;
+				} 
+				else {
+					nextNode = node.getParent().getFirstChild();
+					if (nextNode === node) {
+						nextNode = null;
+					}
+				}
+			}
+			if (nextNode) {
+				activateNode(nextNode);
+			}
+			else {
+				node.navigate(KC.UP, true);
+			}
+			break;
+		// case "shift+right":
+		case "navExpand":
+			node.visit(function(node){
+		        node.setExpanded(true);
+		    }, true);
+			break;
+		// case "shift+left":
+		case "navCollapse":
+			node.visit(function(node){
+		        node.setExpanded(false);
+		    }, true);
+			break;
+		// case "ctrl+space":
+		case "navToggleExpanded":
+			node.toggleExpanded();
+			break;
+		// case "shift+space":
+		case "navToggleExpandedAll":
+			var nodeIsExpanded = node.isExpanded();
+			if (!nodeIsExpanded) {
+				node.visit(function(node){
+			        node.setExpanded(true);
+			    }, true);
+			}
+			else {
+				node.visit(function(node){
+			        node.setExpanded(false);
+			    }, true);
+			}
+			break;
+		// case "shift+up":
+		case "navExtendSelUp":					
+			var movingNode = findContigSelectionBound();
+			var newNode = getPrevNode(movingNode);
+			if (newNode) {
+				console.log(movingNode.title + ":" + newNode.title);
+				selectContigNodes(node, newNode);
+			}
+			return false;
+			// node.navigate(KC.UP, true);
+			break;
+		// case "shift+down":
+		case "navExtendSelDown":
+			var movingNode = findContigSelectionBound();
+			var newNode = getNextNode(movingNode);
+			if (newNode) {
+				console.log(movingNode.title + ":" + newNode.title);
+				selectContigNodes(node, newNode);
+			}
+			return false;
+			// node.navigate(KC.DOWN, true);
+			break;
 	}
 }
 
 // test if the edit commands are possible for the purpose of disabling menu items and buttons
-function can(cmd, node) {
+// !!!make nodes, not node. 
+// !!isTitle() should test nodes[0]
+function can(cmd, node, nodes) {
 	var ret_val;
 	// the switch statement determines if it *can't* do it. the result gets negated in the return statement. 
 	switch (cmd) {
@@ -229,17 +340,20 @@ function can(cmd, node) {
 		case "pasteLastChild":
 			ret_val = isTitle(node) || clipboard === null;
 			break;
+
+		// !!!Add tests of contiguous siblings
+		// !!!test nodes[0] or nodes[nodes.length-1], depending on the situation
 		case "promoteAbove":
 		case "promote":
-			ret_val = isTitle(node) || node.getParent().isRootNode();
+			ret_val = isTitle(node) || node.getParent().isRootNode() || !areContiguousSiblings(nodes);
 			break;
 		case "demote":
 		case "demoteFirstChild":
 		case "moveUp":
-			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling();
+			ret_val = isTitle(node) || isTitle(node.getPrevSibling()) || node.isFirstSibling() || !areContiguousSiblings(nodes);
 			break;
 		case "moveDown":
-			ret_val = isTitle(node) || node.isLastSibling();
+			ret_val = isTitle(nodes[0]) || nodes[nodes.length-1].isLastSibling() || !areContiguousSiblings(nodes);
 			break;
 	}
 	return !ret_val;
@@ -337,11 +451,11 @@ function makeNodeItem(str) {
 }
 
 function makeEmptyOutline(str) {
-	// return makeNodeTitle("Untitled");
-	return [
-		makeNodeTitle("Untitled"), 
-		// makeNodeItem("Item 1")
-	];
+	return [makeNodeTitle("Untitled")];
+	// return [
+	// 	makeNodeTitle("Untitled"), 
+	// 	// makeNodeItem("Item 1")
+	// ];
 }
 
 function makeNodeTitle(str) {
@@ -358,10 +472,7 @@ function isTitle (node) {
 		var parentNode = node.getParent();
 		if (parentNode) {
 			if (parentNode.isRootNode()) {
-				// console.log(parentNode.title);
-				// console.log("parent is root");
 				if (node.isFirstSibling()) {
-					// console.log("is title");
 					ret_val = true;
 				}
 			}
@@ -370,31 +481,31 @@ function isTitle (node) {
 	return ret_val;
 }
 
-function adjustMenus(node) {
-	// !!!Is this if necessary? 
-	if (node) {
-		for (var key in menuItems) {
-			cmd = menuItems[key];
-			$("#tree").contextmenu("enableEntry", cmd, can(cmd, node));
-		}
+function adjustMenus() {
+	var tree = $("#tree").fancytree("getTree");
+	var node = tree.getActiveNode();
+	var nodes = tree.getSelectedNodes();
+	for (var key in menuItems) {
+		cmd = menuItems[key];
+		$("#tree").contextmenu("enableEntry", cmd, can(cmd, node, nodes));
 	}
 }
 
-function adjustButtons(node) {
-	// !!!Is this if necessary? 
-	if (node) {
-		for (var key in buttons) {
-			cmd = buttons[key];
-			$("#" + cmd + "Button").prop('disabled', !can(cmd, node));
-		}
+function adjustButtons() {
+	var tree = $("#tree").fancytree("getTree");
+	var node = tree.getActiveNode();
+	var nodes = tree.getSelectedNodes();
+	for (var key in buttons) {
+		cmd = buttons[key];
+		$("#" + cmd + "Button").prop('disabled', !can(cmd, node, nodes));
 	}
 }
 
 function activateNode(node) {
 	node.setActive();
-	node.setFocus();
-	adjustButtons(node);
-	$("#tree").focus();
+	// node.setFocus();
+	// adjustButtons();
+	// $("#tree").focus();
 }
 
 function onOutlineChange() {
@@ -418,8 +529,8 @@ function compareNodes(node1, node2) {
 	return (level1 < level2 ? 1 : 2);
 }
 
+// from fancytree KC.UP handler
 function getPrevNode(node) {
-	// from KC.UP handler
 	var sib;
 	sib = node.getPrevSibling();
 	// #359: skip hidden sibling nodes, preventing a _goto() recursion
@@ -435,8 +546,8 @@ function getPrevNode(node) {
 	return sib;
 }
 
+// from fancytree KC.DOWN handler
 function getNextNode(node) {
-	// from KC.DOWN handler
 	var sib;
 	if( node.expanded && node.children && node.children.length ) {
 		sib = node.children[0];
@@ -551,8 +662,8 @@ function getUniqueAncestors(nodes) {
 function areContiguousSiblings(nodes) {
 	var ret_val = true;
 	// only go till next to last one
-	for (var i = 0; i < ret_nodes.length-1; i++) {
-		if (nodes[i+1] !== getNextSibling(nodes[i])) {
+	for (var i = 0; i < nodes.length-1; i++) {
+		if (nodes[i+1] !== nodes[i].getNextSibling()) {
 			ret_val = false;
 			break;
 		}
@@ -619,16 +730,13 @@ function clearFileName() {
 }
 
 function importFile() {
-		// console.log('import');
+	// console.log('import');
 	// var files = document.querySelector('#fileload').files;
 	var files = $('#fileload').prop('files');
 	if (files.length > 0) {
-		// console.log(files[0].name);
 		var file = files[0];
 		var reader = new FileReader();
 		reader.onload = function(event) {
-			// console.log(event.target.result);
-			// $("#theText").val(event.target.result);
 			tree.clear();
 			tree.reload(JSON.parse(event.target.result));
 			onOutlineChange();
@@ -651,14 +759,14 @@ function exportFile() {
 }
 
 function copyJSON_toClipboard() {
-	// toSystemClipboard(getJSON_string());
-	// alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
-	console.log('***debug')
-	var selNodes = tree.getSelectedNodes();
-	var selNodes2 = getUniqueAncestors(selNodes);
-	for (var i = 0; i < selNodes2.length; i++) {
-		console.log(selNodes2[i].title);
-	}
+	toSystemClipboard(getJSON_string());
+	alert("The outline JSON is now in your paste buffer. Save it to a textfile. To load the file, drag it into the browser. The drag does not actually work yet.")
+	// console.log('***debug')
+	// var selNodes = tree.getSelectedNodes();
+	// var selNodes2 = getUniqueAncestors(selNodes);
+	// for (var i = 0; i < selNodes2.length; i++) {
+	// 	console.log(selNodes2[i].title);
+	// }
 }
 
 function clearOutline() {
@@ -679,12 +787,9 @@ $(document).ready(function() {
 	for (var key in buttons) {
 		cmd = buttons[key];
 
-			// buttonLabel = commands[cmd].buttonLabel;
 		cmd_el = commands.find(commands => commands.cmd === cmd);
 		buttonLabel = cmd_el.buttonLabel;
 
-		// console.log(cmd);
-		// console.log(buttonLabel);
 		// Make buttons w html like
 		// <input type="button" value="+" id="addButton" onclick="doCmd('add')">
 		newButStr = "<input ";
@@ -693,7 +798,6 @@ $(document).ready(function() {
 		newButStr += "id='" + cmd  + "Button" + "' ";
 		newButStr += "onclick=" + '"doCmd(' + "'" + cmd  + "'" + ')"';
 		newButStr += '/>';
-		// console.log(newButStr);
 	    newBut = $(newButStr);
 	    newBut.appendTo($("#editButtons"));
 	    // initial state is disabled.
@@ -729,7 +833,6 @@ $(document).ready(function() {
 		if (localStorage["most_recent"] !== undefined) {
 			jsonStore = JSON.parse(localStorage["most_recent"]);
 			newTreeB = false;
-			// jsonStore = localStorage.getItem("most_recent");
 		}
 	}
 	// Attach the fancytree widget to an existing <div id="tree"> element
@@ -758,6 +861,7 @@ $(document).ready(function() {
 		// extensions: ["persist", "edit", "dnd"],
 		// extensions: ["wide", "edit", "dnd"],
 		// extensions: ["wide", "edit"],
+		// Various icon fails. 
 		// icon: "foo.png",
 		// icon: "bullet.gif",
 		// icon: "icons.gif",
@@ -855,25 +959,18 @@ $(document).ready(function() {
 		beforeActivate: function(event, data) {
 			// is this if necessary
 			if (tree) {
-				console.log('beforeActivate: ' + (tree.getActiveNode() ? tree.getActiveNode().title : "NO ACTIVE") + " " + data.node.title);
+				// console.log('beforeActivate: ' + (tree.getActiveNode() ? tree.getActiveNode().title : "NO ACTIVE") + " " + data.node.title);
 				selectNodesAll(false);
-				console.log(event);
+				// console.log(event);
 			}
 		},
 		activate: function(event, data) {
-	//        alert("activate " + data.node);
-			console.log("activating")
+			// console.log("activating")
 			var node = data.node;
 			node.setSelected(true);
-			adjustButtons(node);
-			console.log(node.getLevel());
-			console.log(node.getIndexHier());
-			console.log(node.getKeyPath());
-			console.log(node.getParentList());
-			console.log(node.title);
-			// console.log("index " + node);
-			// console.log("index " + node.getIndex());
-			// console.log("index"); //" + node.getIndex());
+			node.setFocus();
+			$("#tree").focus();
+			adjustButtons();
 		},
 		expand: function(event, data) {
 			onOutlineChange();
@@ -888,29 +985,18 @@ $(document).ready(function() {
 			// console.log('beforeSelect')
 		},
 		select: function(event, data) {
-			// Display list of selected nodes
-			var selNodes = data.tree.getSelectedNodes();
 			// console.log('*** select');
+			// Display list of selected nodes
+			// var selNodes = data.tree.getSelectedNodes();
 			// console.log(selNodes);
-
-			// convert to title/key array
-			// var selKeys = $.map(selNodes, function(node){
-			// 	return "[" + node.key + "]: '" + node.title + "'";
-			// });
-			// $("#echoSelection2").text(selKeys.join(", "));
 		},
 		click: function(event, data) {
-			console.log('*** click');
+			// console.log('*** click');
 
 			var activeNode = tree.getActiveNode();
 			var selNodes = data.tree.getSelectedNodes();
 			var clickedNode = data.node;
 
-			// console.log('clicked: ' + clickedNode.title);
-			// console.log('active: ' + activeNode.title);
-			// console.log('selNodes: ' + selNodes);
-			// console.log(event);
-			// console.log('selected?: ' + clickedNode.isSelected());
 			// If selecting the active node, and it's the only selected one, then it's a noop. 
 			if ((event.metaKey) && (clickedNode === activeNode) && (selNodes.length === 0)) {
 				return true;
@@ -923,9 +1009,6 @@ $(document).ready(function() {
 				// !!!need to disable double click here --- OR turn it off as edit trigger.
 				// If clicking the active node, then the desire is to unselect it. So, have to make another node active. 
 				if (clickedNode === activeNode) {
-					// if (selNodes.length === 0) {
-					// 	return true;
-					// }
 					// Make the first one the active node, unless that was the one they clicked on, in which case go to the next one down. 
 					activeNode = selNodes[0];
 					if (clickedNode === activeNode) {
@@ -970,141 +1053,31 @@ $(document).ready(function() {
 	$("#tree").on("keydown", function(e){
 	    var eStr = $.ui.fancytree.eventToString(e);
 		var cmd = '';
-	    var node = tree.getActiveNode();
-	    console.log( eStr );
+	    // console.log( eStr );
 	    // try edit commands
 		cmd_el = commands.find(commands => commands.kbd === eStr);
 		if (cmd_el) {
 			cmd = cmd_el.cmd;
-	    	if (can(cmd, node)) {
+	    	if (can(cmd, tree.getActiveNode(), tree.getSelectedNodes())) {
 	 			doCmd(cmd);
 	    	}
 	    }
 	    // try navigation commands
 	    else {
-	    	var nextNode = null;
-	    	KC = $.ui.keyCode;
-		    switch( eStr ) {
-		    	// down to next line
-				case "j":
-					node.navigate(KC.DOWN, true);
-					break;
-		    	// jump down:
-		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
-		    	// otherwise, jump to last sibling (parent's last child)
-		    	// otherwise, treat like normal down nav. 
-				// case "shift+down":
-				case "shift+j":
-					if (node.hasChildren() && node.isExpanded()) {
-						nextNode = node.getNextSibling();
-					} 
-					else {
-						nextNode = node.getParent().getLastChild();
-						if (nextNode === node) {
-							nextNode = null;
-						}
-					}
-					if (nextNode) {
-						activateNode(nextNode);
-					}
-					else {
-						node.navigate(KC.DOWN, true);
-					}
-					break;
-		    	// up to next line
-				case "k":
-					node.navigate(KC.UP, true);
-					break;
-		    	// jump up:
-		    	// if next sibling is expanded and has children, jump to next sibling, skipping over children
-		    	// otherwise, jump to first sibling (parent's first child)
-		    	// otherwise, treat like normal down nav. 
-				// case "shift+up":
-				case "shift+k":
-					var prevSibNode = node.getPrevSibling();
-					if (prevSibNode !== null) {
-						if (prevSibNode.hasChildren() && prevSibNode.isExpanded()) {
-							nextNode = prevSibNode;
-						} 
-						else {
-							nextNode = node.getParent().getFirstChild();
-							if (nextNode === node) {
-								nextNode = null;
-							}
-						}
-					}
-					if (nextNode) {
-						activateNode(nextNode);
-					}
-					else {
-						node.navigate(KC.UP, true);
-					}
-					break;
-				case "shift+right":
-					node.visit(function(node){
-				        node.setExpanded(true);
-				    }, true);
-					break;
-				case "shift+left":
-					node.visit(function(node){
-				        node.setExpanded(false);
-				    }, true);
-					break;
-				case "ctrl+space":
-					node.toggleExpanded();
-					break;
-				case "shift+space":
-					var nodeIsExpanded = node.isExpanded();
-					if (!nodeIsExpanded) {
-						node.visit(function(node){
-					        node.setExpanded(true);
-					        // !!!temporary
-					        // node.setSelected(true);
-					    }, true);
-				        // !!!temporary
-					    // console.log(tree.getActiveNode());
-					    // console.log(tree.getSelectedNodes());
-					}
-					else {
-						node.visit(function(node){
-					        node.setExpanded(false);
-					    }, true);
-					}
-					break;
-				case "shift+up":
-					var movingNode = findContigSelectionBound();
-					var newNode = getPrevNode(movingNode);
-					if (newNode) {
-						console.log(movingNode.title + ":" + newNode.title);
-						selectContigNodes(node, newNode);
-					}
-					return false;
-					// node.navigate(KC.UP, true);
-					break;
-				case "shift+down":
-					var movingNode = findContigSelectionBound();
-					var newNode = getNextNode(movingNode);
-					if (newNode) {
-						console.log(movingNode.title + ":" + newNode.title);
-						selectContigNodes(node, newNode);
-					}
-					return false;
-					// node.navigate(KC.DOWN, true);
-					break;
+			cmd_el = navCommands.find(navCommands => navCommands.kbd === eStr);
+			if (cmd_el) {
+				cmd = cmd_el.cmd;
+				doNavCmd(cmd);
 		    }
 	    }
-	    // console.log( cmd );
 	});
 	$("#tree").focus(function() {
-  		// alert( "Handler for .focus() called." );
-  		// console.log("tree focus");
 		var node = tree.getActiveNode();
 		activateNode(node);
 	});
 	if (newTreeB) {
 		setupNewTree();
 	} else {
-		// var node = tree.getActiveNode();
 		var node  = getTitleNode();
 		activateNode(node);
 	}
@@ -1127,15 +1100,12 @@ $(document).ready(function() {
 		// ],
 		menu: menuItemArray,
 		beforeOpen: function(event, ui) {
-			var node = $.ui.fancytree.getNode(ui.target);
-			adjustMenus(node);
-			node.setActive();
+			adjustMenus();
 		},
 		select: function(event, ui) {
 			// delay the event, so the menu can close and the click event does
 			// not interfere with the edit control
 			setTimeout(function(){
-				// console.log(ui.cmd);
 				doCmd(ui.cmd);
 			}, 100);
 		}
