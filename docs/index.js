@@ -223,7 +223,8 @@ function doNavCmd(cmd) {
 				}
 			}
 			if (nextNode) {
-				activateNode(nextNode);
+				// activateNode(nextNode);
+				nextNode.setActive();
 			}
 			else {
 				node.navigate(KC.DOWN, true);
@@ -254,7 +255,8 @@ function doNavCmd(cmd) {
 				}
 			}
 			if (nextNode) {
-				activateNode(nextNode);
+				// activateNode(nextNode);
+				nextNode.setActive();
 			}
 			else {
 				node.navigate(KC.UP, true);
@@ -320,6 +322,11 @@ function doNavCmd(cmd) {
 // !!isTitle() should test nodes[0]
 function can(cmd, node, nodes) {
 	var ret_val;
+	// This shouldn't be necessary. the active node should always be selected
+	// if (nodes.length === 0) {
+	// 	console.log("mayday! mayday!")
+	// 	nodes = [node];
+	// }
 	// the switch statement determines if it *can't* do it. the result gets negated in the return statement. 
 	switch (cmd) {
 		case "add":
@@ -370,8 +377,8 @@ function insertNodes(nodeIn, mode, clipboardIn, activeNum=0) {
 		nextNode = getNextNode(nextNode);
 	}
 	nodeOut = nextNode;
-	// nodeOut.setActive();
-	activateNode(nodeOut);
+	nodeOut.setActive();
+	// activateNode(nodeOut);
 
 	nextNode = firstNode;
 	for (var i = 0; i < clipboardIn.length; i++) {
@@ -502,7 +509,15 @@ function adjustButtons() {
 }
 
 function activateNode(node) {
-	node.setActive();
+	node.setSelected(true);
+	// var tree = $("#tree").fancytree("getTree");
+	// console.log("activating " + tree.getSelectedNodes())
+	node.setFocus();
+	$("#tree").focus();
+	adjustButtons();
+
+	// node.setActive();
+
 	// node.setFocus();
 	// adjustButtons();
 	// $("#tree").focus();
@@ -718,8 +733,8 @@ function makeTextFile(text) {
 
 function setupNewTree() {
 	var titleNode = getTitleNode();
-	// titleNode.setActive();
-	activateNode(titleNode);
+	// activateNode(titleNode);
+	titleNode.setActive();
 	titleNode.editStart();
 }
 
@@ -916,7 +931,8 @@ $(document).ready(function() {
 						// $("#tree").trigger("nodeCommand", {cmd: "addSibling"});
 						data.node.editCreateNode("after", makeNodeItem(""));
 					}
-					activateNode(data.node);
+					// activateNode(data.node);
+					data.node.setActive();
 				}
 			}
 		},
@@ -967,10 +983,7 @@ $(document).ready(function() {
 		activate: function(event, data) {
 			// console.log("activating")
 			var node = data.node;
-			node.setSelected(true);
-			node.setFocus();
-			$("#tree").focus();
-			adjustButtons();
+			activateNode(node);
 		},
 		expand: function(event, data) {
 			onOutlineChange();
@@ -997,6 +1010,9 @@ $(document).ready(function() {
 			var selNodes = data.tree.getSelectedNodes();
 			var clickedNode = data.node;
 
+			if (event.ctrlKey) {
+				console.log("ctrl");
+			}
 			// If selecting the active node, and it's the only selected one, then it's a noop. 
 			if ((event.metaKey) && (clickedNode === activeNode) && (selNodes.length === 0)) {
 				return true;
@@ -1073,13 +1089,15 @@ $(document).ready(function() {
 	});
 	$("#tree").focus(function() {
 		var node = tree.getActiveNode();
-		activateNode(node);
+		// activateNode(node);
+		node.setActive;
 	});
 	if (newTreeB) {
 		setupNewTree();
 	} else {
 		var node  = getTitleNode();
-		activateNode(node);
+		// activateNode(node);
+		node.setActive;
 	}
 	// $("#tree").focus();
 	/*
@@ -1100,6 +1118,9 @@ $(document).ready(function() {
 		// ],
 		menu: menuItemArray,
 		beforeOpen: function(event, ui) {
+			// tree.getActiveNode().setActive();
+			activateNode(tree.getActiveNode());
+			// console.log("beforeOpen menu " + tree.getSelectedNodes())
 			adjustMenus();
 		},
 		select: function(event, ui) {
