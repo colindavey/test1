@@ -189,7 +189,8 @@ function doCmd(cmd) {
 		if (cmd === 'add' || cmd === 'addAbove' || cmd === 'addFirstChild' || cmd === 'addLastChild') {
 			return false;
 		} else {
-			// activateNode(node);
+			activateNode(node);
+			// node.setActive();
 			return true;
 		}
 	// }
@@ -223,8 +224,8 @@ function doNavCmd(cmd) {
 				}
 			}
 			if (nextNode) {
-				// activateNode(nextNode);
-				nextNode.setActive();
+				activateNode(nextNode);
+				// nextNode.setActive();
 			}
 			else {
 				node.navigate(KC.DOWN, true);
@@ -255,8 +256,8 @@ function doNavCmd(cmd) {
 				}
 			}
 			if (nextNode) {
-				// activateNode(nextNode);
-				nextNode.setActive();
+				activateNode(nextNode);
+				// nextNode.setActive();
 			}
 			else {
 				node.navigate(KC.UP, true);
@@ -377,8 +378,8 @@ function insertNodes(nodeIn, mode, clipboardIn, activeNum=0) {
 		nextNode = getNextNode(nextNode);
 	}
 	nodeOut = nextNode;
-	nodeOut.setActive();
-	// activateNode(nodeOut);
+	// nodeOut.setActive();
+	activateNode(nodeOut);
 
 	nextNode = firstNode;
 	for (var i = 0; i < clipboardIn.length; i++) {
@@ -401,18 +402,6 @@ function removeNodes(nodes) {
 	for (var nodeInd in nodes) {
 	    nodes[nodeInd].remove();
 	}
-    return nextNodeToActivate;
-}
-
-function removeNode(node) {
-	var nextNodeToActivate = node.getNextSibling();
-	if (nextNodeToActivate === null) {
-		nextNodeToActivate = node.getPrevSibling();
-	}
-	if (nextNodeToActivate === null) {
-		nextNodeToActivate = node.getParent();
-	}
-    node.remove();
     return nextNodeToActivate;
 }
 
@@ -509,18 +498,15 @@ function adjustButtons() {
 }
 
 function activateNode(node) {
+	node.setActive();
+	afterActivateNode(node);
+}
+
+function afterActivateNode(node) {
 	node.setSelected(true);
-	// var tree = $("#tree").fancytree("getTree");
-	// console.log("activating " + tree.getSelectedNodes())
 	node.setFocus();
 	$("#tree").focus();
 	adjustButtons();
-
-	// node.setActive();
-
-	// node.setFocus();
-	// adjustButtons();
-	// $("#tree").focus();
 }
 
 function onOutlineChange() {
@@ -733,8 +719,8 @@ function makeTextFile(text) {
 
 function setupNewTree() {
 	var titleNode = getTitleNode();
-	// activateNode(titleNode);
-	titleNode.setActive();
+	activateNode(titleNode);
+	// titleNode.setActive();
 	titleNode.editStart();
 }
 
@@ -931,8 +917,8 @@ $(document).ready(function() {
 						// $("#tree").trigger("nodeCommand", {cmd: "addSibling"});
 						data.node.editCreateNode("after", makeNodeItem(""));
 					}
-					// activateNode(data.node);
-					data.node.setActive();
+					activateNode(data.node);
+					// data.node.setActive();
 				}
 			}
 		},
@@ -983,7 +969,7 @@ $(document).ready(function() {
 		activate: function(event, data) {
 			// console.log("activating")
 			var node = data.node;
-			activateNode(node);
+			afterActivateNode(node);
 		},
 		expand: function(event, data) {
 			onOutlineChange();
@@ -1030,7 +1016,8 @@ $(document).ready(function() {
 					if (clickedNode === activeNode) {
 						activeNode = selNodes[1];
 					}
-					activeNode.setActive();
+					// activeNode.setActive();
+					activateNode(activeNode);
 					selectNodesAll(true);
 					for (var aNode in selNodes) {
 						selNodes[aNode].setSelected(true);
@@ -1038,7 +1025,8 @@ $(document).ready(function() {
 					clickedNode.setSelected(false);
 				}
 				else {
-					activeNode.setActive();
+					// activeNode.setActive();
+					activateNode(activeNode);
 					clickedNode.toggleSelected();
 				}
 
@@ -1054,7 +1042,8 @@ $(document).ready(function() {
 			else if (clickedNode === activeNode) {
 				// console.log('here');
 				selectNodesAll(false);
-				activeNode.setActive();
+				// activeNode.setActive();
+				activateNode(activeNode);
 			}
 		},
 	//   keydown: function(event, data) {
@@ -1089,15 +1078,15 @@ $(document).ready(function() {
 	});
 	$("#tree").focus(function() {
 		var node = tree.getActiveNode();
-		// activateNode(node);
-		node.setActive;
+		activateNode(node);
+		// node.setActive;
 	});
 	if (newTreeB) {
 		setupNewTree();
 	} else {
 		var node  = getTitleNode();
-		// activateNode(node);
-		node.setActive;
+		activateNode(node);
+		// node.setActive;
 	}
 	// $("#tree").focus();
 	/*
